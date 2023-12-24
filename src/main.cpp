@@ -5,13 +5,18 @@
 #include "backends/imgui_impl_opengl2.h"
 #include "backends/imgui_impl_glut.h"
 #include "physics/physics_engine.h"
+#include "imgui_internal.h"
 
 GLuint window;
 GLuint width = 1000, height = 1000;
 
-int number_of_balls_to_add = 1000;
+int number_of_balls_to_add = 0;
 int particle_counter = 0;
 int ball_add_counter = 0;
+float particle_velocity_x = 0.01;
+float particle_velocity_y = 0.01;
+int particle_time_delta = 5;
+float particle_size = 0.02;
 
 float gravity = -0.000;
 
@@ -44,9 +49,9 @@ void timer(int) {
     physicsEngine.update();
     glutPostRedisplay();
     glutTimerFunc(16, timer, 0);  // 60 frames per second
-    if (ball_add_counter % 5 == 0) {
+    if (ball_add_counter % particle_time_delta == 0) {
         if (number_of_balls_to_add > 0) {
-            physicsEngine.addGameObject(GameObject{0, 0.8, 0.01, 0.02, 0.02});
+            physicsEngine.addGameObject(GameObject{0, 0.8, particle_velocity_x, particle_velocity_y, particle_size, 100*particle_size});
             number_of_balls_to_add--;
             ball_add_counter++;
             particle_counter++;
@@ -87,6 +92,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+int balls_to_add = 10;
 void MainLoopStep()
 
 {
@@ -102,7 +108,27 @@ void MainLoopStep()
         ImGui::Begin("Imgui DEMO window");                          // Create a window called "Hello, world!" and append into it.
 
         ImGui::Text("2D gravity ball simulator.");               // Display some text (you can use a format strings too)
+        ImGui::SliderInt("Number of balls to add", &balls_to_add, 0, 1000);
+
+        ImGui::Separator();
+
+        ImGui::SliderFloat("Particle velocity x", &particle_velocity_x, -0.1, 0.1);
+        ImGui::SliderFloat("Particle velocity y", &particle_velocity_y, -0.1, 0.1);
+        ImGui::SliderInt("Particle time delta", &particle_time_delta, 1, 60);
+        ImGui::SliderFloat("Particle size", &particle_size, 0.01, 0.1);
+
+        if(ImGui::Button("Add balls")){
+            number_of_balls_to_add = balls_to_add;
+        }
+
+
+
         ImGui::Text("Number of particles: %d", particle_counter);
+
+        if(ImGui::Button("Clear balls")){
+            physicsEngine.setGameObjects(std::vector<GameObject>());
+            particle_counter = 0;
+        }
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
