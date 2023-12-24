@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 
 project(PIKProject)
 
@@ -18,10 +18,6 @@ find_package(GLEW REQUIRED)
 # Set source files
 set(SOURCE_FILES
         src/main.cpp
-        src/physics/physic_object.hpp
-        src/physics/physics.hpp
-        src/physics/collision_grip.hpp
-        src/physics/grid.hpp
         imgui/imgui.cpp
         imgui/imgui_draw.cpp
         imgui/imconfig.h
@@ -34,6 +30,8 @@ set(SOURCE_FILES
         imgui/backends/imgui_impl_glut.cpp
         imgui/backends/imgui_impl_opengl2.h
         imgui/backends/imgui_impl_opengl2.cpp
+        src/physics/game_object.h
+        src/physics/physics_engine.cpp
 )
 
 
