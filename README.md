@@ -20,7 +20,11 @@ sudo apt install libglm-dev -y
 sudo apt update
 sudo apt-get install -y libglew-dev
 ```
-
+5. Install CMake
+```bash
+sudo apt update
+sudo apt install make cmake -y
+```
 
 # Run the code
 ```bash
