@@ -21,7 +21,8 @@ float particle_size = 0.02;
 float gravity = -0.000;
 
 void MainLoopStep();
-PhysicsEngine physicsEngine = PhysicsEngine(gravity);
+ThreadPool threadPool(10);
+PhysicsEngine physicsEngine = PhysicsEngine(gravity, threadPool);
 
 std::vector<GameObject> balls = std::vector<GameObject>();
 
