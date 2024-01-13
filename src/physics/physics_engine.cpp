@@ -4,15 +4,16 @@
 #include "point.h"
 
 void PhysicsEngine::update() {
+    positionBallsInGrid();
+    solveCollisions();
+
     for (auto &gameObject : gameObjects) {
         // Update position based on velocity
         gameObject.x += gameObject.vx;
         gameObject.y += gameObject.vy;
 
-        positionBallsInGrid();
         resolveCollisionsWithWalls(gameObject);
 
-        solveCollisions();
 
 
         // Apply gravity
@@ -20,7 +21,6 @@ void PhysicsEngine::update() {
     }
 
 }
-// TODO: funkcija koja mapira world coordinates [-1,1] u grid cordinates [0,grid.width]
 Point mapToWorldToGrid(const Point& worldCoord, const CollisionGrid& grid) {
     // Assuming world coordinates range from -1 to 1
     float normalizedX = (worldCoord.x + 1.0f) / 2.0f;
@@ -55,7 +55,7 @@ void PhysicsEngine::positionBallsInGrid() {
 void PhysicsEngine::checkAtomCellCollisions(uint32_t atom_idx, const CollisionCell& c)
 {
     for (uint32_t i{0}; i < c.objects_count; ++i) {
-        resolveCollisionsWithBalls(gameObjects[atom_idx], gameObjects[c.objects[i]]);
+        resolveCollisionsWithBalls(atom_idx, c.objects[i]);
     }
 }
 
@@ -163,8 +163,10 @@ void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
     }
 }
 
-void PhysicsEngine::resolveCollisionsWithBalls(GameObject& gameObject, GameObject& otherBall) {
+void PhysicsEngine::resolveCollisionsWithBalls(uint32_t gameObjectId, uint32_t otherBallId) {
     float velocityLoss = 1; // Adjust the velocity loss factor as needed
+    GameObject& gameObject = gameObjects[gameObjectId];
+    GameObject& otherBall = gameObjects[otherBallId];
     if (&gameObject != &otherBall) { // Avoid self-collision
         float dx = gameObject.x - otherBall.x;
         float dy = gameObject.y - otherBall.y;
