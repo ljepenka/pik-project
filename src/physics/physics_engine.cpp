@@ -55,86 +55,90 @@ void PhysicsEngine::positionBallsInGrid() {
 void PhysicsEngine::checkAtomCellCollisions(uint32_t atom_idx, const CollisionCell& c)
 {
     for (uint32_t i{0}; i < c.objects_count; ++i) {
-        resolveCollisionsWithBalls(gameObjects[atom_idx]);
+        resolveCollisionsWithBalls(gameObjects[atom_idx], gameObjects[c.objects[i]]);
     }
+}
+
+bool checkIndex(uint32_t index, uint32_t width, uint32_t height) {
+    return index >= 0 && index < width * height;
 }
 
 void PhysicsEngine::processCell(const CollisionCell& c, uint32_t index)
 {
     for (uint32_t i{0}; i < c.objects_count; ++i) {
         const uint32_t atom_idx = c.objects[i];
-//        std::cout << "atom_idx: " << atom_idx << std::endl;
-//        checkAtomCellCollisions(atom_idx, grid.gridData[index - 1]);
-//        std::cout << "atom_idx2: " << atom_idx << std::endl;
+        int indexToCheck = index;
 
-        checkAtomCellCollisions(atom_idx, grid.gridData[index]);
-//        std::cout << "atom_idx3: " << atom_idx << std::endl;
+        checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
 
-//        checkAtomCellCollisions(atom_idx, grid.gridData[index + 1]);
-//        std::cout << "atom_id4: " << atom_idx << std::endl;
+        indexToCheck = index - 1;
+        if (checkIndex(indexToCheck, grid.width, grid.height)) {
+            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+        }
 
-//        checkAtomCellCollisions(atom_idx, grid.gridData[index + grid.height - 1]);
-//        std::cout << "atom_id5: " << atom_idx << std::endl;
 
-//        checkAtomCellCollisions(atom_idx, grid.gridData[index + grid.height    ]);
-//        std::cout << "atom_id6: " << atom_idx << std::endl;
+        indexToCheck = index + 1;
+        if (checkIndex(indexToCheck, grid.width, grid.height)) {
+            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+        }
 
-//        checkAtomCellCollisions(atom_idx, grid.gridData[index + grid.height + 1]);
-//        std::cout << "atom_id7: " << atom_idx << std::endl;
+        indexToCheck = index + grid.height - 1;
+        if (checkIndex(indexToCheck, grid.width, grid.height)) {
+            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+        }
 
-//        checkAtomCellCollisions(atom_idx, grid.gridData[index - grid.height - 1]);
-//        std::cout << "atom_id8: " << atom_idx << std::endl;
+        indexToCheck = index + grid.height;
+        if (checkIndex(indexToCheck, grid.width, grid.height)) {
+            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+        }
 
-//        checkAtomCellCollisions(atom_idx, grid.gridData[index - grid.height    ]);
-//        std::cout << "atom_id9: " << atom_idx << std::endl;
+        indexToCheck = index + grid.height + 1;
+        if (checkIndex(indexToCheck, grid.width, grid.height)) {
+            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+        }
 
-//        checkAtomCellCollisions(atom_idx, grid.gridData[index - grid.height + 1]);
-//        std::cout << "atom_idx10: " << atom_idx << std::endl;
+        indexToCheck = index - grid.height - 1;
+        if (checkIndex(indexToCheck, grid.width, grid.height)) {
+            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+        }
+
+        indexToCheck = index - grid.height;
+        if (checkIndex(indexToCheck, grid.width, grid.height)) {
+            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+        }
+
+        indexToCheck = index - grid.height + 1;
+        if (checkIndex(indexToCheck, grid.width, grid.height)) {
+            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+        }
 
     }
 }
 
-void PhysicsEngine::solveCollisionThreaded(uint32_t start, uint32_t end)
+void PhysicsEngine::solveCollisionThreaded(int cellNumber)
 {
-    for (uint32_t idx = 0; idx < end; ++idx) {
-        processCell(grid.gridData[idx], idx);
-    }
+    processCell(grid.gridData[cellNumber], cellNumber);
+
 }
 
 void PhysicsEngine::solveCollisions()
 {
     // Multi-thread grid
-    const uint32_t thread_count = threadPool.size;
-    const uint32_t slice_count  = thread_count * 2;
-    const uint32_t slice_size   = (grid.width / slice_count) * grid.height;
-    const uint32_t last_cell    = (2 * (thread_count - 1) + 2) * slice_size;
+//    const uint32_t thread_count = threadPool.size;
+//    const uint32_t slice_count  = thread_count * 2;
+//    const uint32_t slice_size   = (grid.width / slice_count) * grid.height;
+//    const uint32_t last_cell    = (2 * (thread_count - 1) + 2) * slice_size;
     // Find collisions in two passes to avoid data races
 
     // First collision pass
-    for (uint32_t i{0}; i < thread_count; ++i) {
-        threadPool.addTask([this, i, slice_size]{
-            uint32_t const start{2 * i * slice_size};
-            uint32_t const end  {start + slice_size};
-            solveCollisionThreaded(start, end);
-        });
+    for (uint32_t i{0}; i < grid.width * grid.height; ++i) {
+        solveCollisionThreaded(i);
     }
-    // Eventually process rest if the world is not divisible by the thread count
-    if (last_cell < grid.gridData.size()) {
-        threadPool.addTask([this, last_cell]{
-            solveCollisionThreaded(last_cell, grid.gridData.size());
-        });
+
     }
-    threadPool.waitTaskCompletion();
-    // Second collision pass
-    for (uint32_t i{0}; i < thread_count; ++i) {
-        threadPool.addTask([this, i, slice_size]{
-            uint32_t const start{(2 * i + 1) * slice_size};
-            uint32_t const end  {start + slice_size};
-            solveCollisionThreaded(start, end);
-        });
-    }
-    threadPool.waitTaskCompletion();
-}
+
+
+//}
 
 
 void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
@@ -159,53 +163,52 @@ void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
     }
 }
 
-void PhysicsEngine::resolveCollisionsWithBalls(GameObject& gameObject) {
+void PhysicsEngine::resolveCollisionsWithBalls(GameObject& gameObject, GameObject& otherBall) {
     float velocityLoss = 1; // Adjust the velocity loss factor as needed
-    for (auto& otherBall : gameObjects) {
-        if (&gameObject != &otherBall) { // Avoid self-collision
-            float dx = gameObject.x - otherBall.x;
-            float dy = gameObject.y - otherBall.y;
-            float distance = std::sqrt(dx * dx + dy * dy);
-            float minDistance = gameObject.radius + otherBall.radius;
+    if (&gameObject != &otherBall) { // Avoid self-collision
+        float dx = gameObject.x - otherBall.x;
+        float dy = gameObject.y - otherBall.y;
+        float distance = std::sqrt(dx * dx + dy * dy);
+        float minDistance = gameObject.radius + otherBall.radius;
 
-            if (distance < minDistance) {
-                // Balls are overlapping, resolve the collision
+        if (distance < minDistance) {
+            // Balls are overlapping, resolve the collision
 
-                // Calculate the unit normal and tangent
-                float normalX = dx / distance;
-                float normalY = dy / distance;
+            // Calculate the unit normal and tangent
+            float normalX = dx / distance;
+            float normalY = dy / distance;
 
-                // Calculate relative velocity
-                float relativeVelocity = (gameObject.vx - otherBall.vx) * normalX +
-                                         (gameObject.vy - otherBall.vy) * normalY;
+            // Calculate relative velocity
+            float relativeVelocity = (gameObject.vx - otherBall.vx) * normalX +
+                                     (gameObject.vy - otherBall.vy) * normalY;
 
-                // Resolve collision along the normal
-                if (relativeVelocity < 0) {
-                    float impulse = (-(1) * relativeVelocity) /
-                                    (1 / gameObject.mass + 1 / otherBall.mass);
-                    gameObject.vx += impulse / gameObject.mass * normalX;
-                    gameObject.vy += impulse / gameObject.mass * normalY;
-                    otherBall.vx -= impulse / otherBall.mass * normalX;
-                    otherBall.vy -= impulse / otherBall.mass * normalY;
+            // Resolve collision along the normal
+            if (relativeVelocity < 0) {
+                float impulse = (-(1) * relativeVelocity) /
+                                (1 / gameObject.mass + 1 / otherBall.mass);
+                gameObject.vx += impulse / gameObject.mass * normalX;
+                gameObject.vy += impulse / gameObject.mass * normalY;
+                otherBall.vx -= impulse / otherBall.mass * normalX;
+                otherBall.vy -= impulse / otherBall.mass * normalY;
 
-                    // Apply velocity loss
-                    gameObject.vx *= velocityLoss;
-                    gameObject.vy *= velocityLoss;
-                    otherBall.vx *= velocityLoss;
-                    otherBall.vy *= velocityLoss;
+                // Apply velocity loss
+                gameObject.vx *= velocityLoss;
+                gameObject.vy *= velocityLoss;
+                otherBall.vx *= velocityLoss;
+                otherBall.vy *= velocityLoss;
 
-                    // Separate the balls using minimum translation vector (MTV)
-                    float overlap = minDistance - distance;
-                    float moveX = overlap * normalX;
-                    float moveY = overlap * normalY;
+                // Separate the balls using minimum translation vector (MTV)
+                float overlap = minDistance - distance;
+                float moveX = overlap * normalX;
+                float moveY = overlap * normalY;
 
-                    gameObject.x += 0.5 * moveX;
-                    gameObject.y += 0.5 * moveY;
-                    otherBall.x -= 0.5 * moveX;
-                    otherBall.y -= 0.5 * moveY;
-                }
+                gameObject.x += 0.5 * moveX;
+                gameObject.y += 0.5 * moveY;
+                otherBall.x -= 0.5 * moveX;
+                otherBall.y -= 0.5 * moveY;
             }
         }
+
     }
 }
 

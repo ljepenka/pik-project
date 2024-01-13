@@ -6,7 +6,7 @@
 class PhysicsEngine {
 public:
 
-    PhysicsEngine(float d, ThreadPool& tp) : threadPool(tp), grid(40, 40){
+    PhysicsEngine(float d, ThreadPool& tp) : threadPool(tp), grid(1, 1){
         gravity = d;
     }
 
@@ -27,7 +27,7 @@ private:
 
     void solveCollisions();
 
-    void solveCollisionThreaded(uint32_t start, uint32_t end);
+    void solveCollisionThreaded(int cellNumber);
 
     void processCell(const CollisionCell& c, uint32_t index);
 
@@ -37,7 +37,7 @@ private:
 
     void resolveCollisionsWithWalls(GameObject &gameObject);
 
-    void resolveCollisionsWithBalls(GameObject &gameObject);
+    void resolveCollisionsWithBalls(GameObject &gameObject, GameObject &other);
 };
 
 

@@ -4,7 +4,7 @@
 
 class CollisionCell {
 public:
-    static constexpr uint8_t cell_capacity = 4;
+    static constexpr uint32_t cell_capacity = 20;
 
     uint32_t objects_count = 0;
     uint32_t objects[cell_capacity] = {};
@@ -17,7 +17,7 @@ public:
     }
 
     void clearGrid() {
-        objects_count = 0u;
+        objects_count = 0;
     }
 
     void removeObject(uint32_t id) {
