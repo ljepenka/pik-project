@@ -1,5 +1,7 @@
 #include <valarray>
+#include <iostream>
 #include "physics_engine.h"
+#include "point.h"
 
 void PhysicsEngine::update() {
     for (auto &gameObject : gameObjects) {
@@ -8,6 +10,8 @@ void PhysicsEngine::update() {
         gameObject.y += gameObject.vy;
 
         positionBallsInGrid();
+        resolveCollisionsWithWalls(gameObject);
+
         solveCollisions();
 
 
@@ -16,15 +20,34 @@ void PhysicsEngine::update() {
     }
 
 }
+// TODO: funkcija koja mapira world coordinates [-1,1] u grid cordinates [0,grid.width]
+Point mapToWorldToGrid(const Point& worldCoord, const CollisionGrid& grid) {
+    // Assuming world coordinates range from -1 to 1
+    float normalizedX = (worldCoord.x + 1.0f) / 2.0f;
+    float normalizedY = (worldCoord.y + 1.0f) / 2.0f;
+
+    // Mapping normalized coordinates to grid coordinates
+    int gridX = static_cast<int>(normalizedX * grid.width);
+    int gridY = static_cast<int>(normalizedY * grid.height);
+
+    // Make sure the grid coordinates are within bounds
+    gridX = std::max(0, std::min(gridX, grid.width - 1));
+    gridY = std::max(0, std::min(gridY, grid.height - 1));
+
+    return {static_cast<float>(gridX), static_cast<float>(gridY)};
+}
+
+
 
 void PhysicsEngine::positionBallsInGrid() {
     grid.clearGrid();
 
     uint32_t i{0};
     for(auto &gameObject: gameObjects) {
-        if(gameObject.x > 1.0f && gameObject.y > 1.0f) {
-            grid.addObject(gameObject.x, gameObject.y, i);
-        }
+//        if(gameObject.x > 1.0f && gameObject.y > 1.0f) {
+        Point gridCoord = mapToWorldToGrid(Point{gameObject.x, gameObject.y}, grid);
+        grid.addObject(gridCoord.x, gridCoord.y, i);
+//        }
         i++;
     }
 }
@@ -33,7 +56,6 @@ void PhysicsEngine::checkAtomCellCollisions(uint32_t atom_idx, const CollisionCe
 {
     for (uint32_t i{0}; i < c.objects_count; ++i) {
         resolveCollisionsWithBalls(gameObjects[atom_idx]);
-        resolveCollisionsWithWalls(gameObjects[atom_idx]);
     }
 }
 
@@ -41,15 +63,34 @@ void PhysicsEngine::processCell(const CollisionCell& c, uint32_t index)
 {
     for (uint32_t i{0}; i < c.objects_count; ++i) {
         const uint32_t atom_idx = c.objects[i];
-        checkAtomCellCollisions(atom_idx, grid.gridData[index - 1]);
+//        std::cout << "atom_idx: " << atom_idx << std::endl;
+//        checkAtomCellCollisions(atom_idx, grid.gridData[index - 1]);
+//        std::cout << "atom_idx2: " << atom_idx << std::endl;
+
         checkAtomCellCollisions(atom_idx, grid.gridData[index]);
-        checkAtomCellCollisions(atom_idx, grid.gridData[index + 1]);
-        checkAtomCellCollisions(atom_idx, grid.gridData[index + grid.height - 1]);
-        checkAtomCellCollisions(atom_idx, grid.gridData[index + grid.height    ]);
-        checkAtomCellCollisions(atom_idx, grid.gridData[index + grid.height + 1]);
-        checkAtomCellCollisions(atom_idx, grid.gridData[index - grid.height - 1]);
-        checkAtomCellCollisions(atom_idx, grid.gridData[index - grid.height    ]);
-        checkAtomCellCollisions(atom_idx, grid.gridData[index - grid.height + 1]);
+//        std::cout << "atom_idx3: " << atom_idx << std::endl;
+
+//        checkAtomCellCollisions(atom_idx, grid.gridData[index + 1]);
+//        std::cout << "atom_id4: " << atom_idx << std::endl;
+
+//        checkAtomCellCollisions(atom_idx, grid.gridData[index + grid.height - 1]);
+//        std::cout << "atom_id5: " << atom_idx << std::endl;
+
+//        checkAtomCellCollisions(atom_idx, grid.gridData[index + grid.height    ]);
+//        std::cout << "atom_id6: " << atom_idx << std::endl;
+
+//        checkAtomCellCollisions(atom_idx, grid.gridData[index + grid.height + 1]);
+//        std::cout << "atom_id7: " << atom_idx << std::endl;
+
+//        checkAtomCellCollisions(atom_idx, grid.gridData[index - grid.height - 1]);
+//        std::cout << "atom_id8: " << atom_idx << std::endl;
+
+//        checkAtomCellCollisions(atom_idx, grid.gridData[index - grid.height    ]);
+//        std::cout << "atom_id9: " << atom_idx << std::endl;
+
+//        checkAtomCellCollisions(atom_idx, grid.gridData[index - grid.height + 1]);
+//        std::cout << "atom_idx10: " << atom_idx << std::endl;
+
     }
 }
 
@@ -99,7 +140,6 @@ void PhysicsEngine::solveCollisions()
 void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
         // Check for collision with walls
     float damping = 0.95;
-
     // Horizontal walls
     if (gameObject.x - gameObject.radius < -1.0) {
         gameObject.x = -1.0 + gameObject.radius;  // Adjust position to be just outside the left wall
@@ -121,7 +161,6 @@ void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
 
 void PhysicsEngine::resolveCollisionsWithBalls(GameObject& gameObject) {
     float velocityLoss = 1; // Adjust the velocity loss factor as needed
-
     for (auto& otherBall : gameObjects) {
         if (&gameObject != &otherBall) { // Avoid self-collision
             float dx = gameObject.x - otherBall.x;

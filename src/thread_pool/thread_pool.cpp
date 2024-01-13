@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <iostream>
 
 class TaskQueue {
 public:
@@ -63,6 +64,7 @@ public:
 
     void run() {
         while(isRunning) {
+//            std::cout << "Thread " << id << " is running" << std::endl;
             queue->getTask(task);
             if(task == nullptr) {
                 TaskQueue::pause();

@@ -39,6 +39,7 @@ void display() {
             float x = gameObjects[i].x + gameObjects[i].radius * std::cos(angle);
             float y = gameObjects[i].y + gameObjects[i].radius * std::sin(angle);
             glVertex2f(x, y);
+//            std::cout << "x: " << x << " y: " << y << std::endl;
         }
         glEnd();
     }
@@ -132,6 +133,8 @@ void MainLoopStep()
         }
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Text("Mouse position x= %.3f y= %.3f, Grid coordinates x=0, x=0", io.MousePos.x, io.MousePos.y);
+
         ImGui::End();
     }
 
