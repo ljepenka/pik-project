@@ -21,7 +21,9 @@ private:
 
     void resolveCollisionsWithWalls(GameObject &gameObject);
 
-    void resolveCollisionsWithBalls(GameObject &gameObject);
+    void resolveCollisionsWithBalls(GameObject &gameObject, GameObject &otherBall);
+
+    void solveCollisions();
 };
 
 

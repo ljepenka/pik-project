@@ -3,20 +3,30 @@
 
 void PhysicsEngine::update() {
     for (auto &gameObject : gameObjects) {
-        // Update position based on velocity
         gameObject.x += gameObject.vx;
         gameObject.y += gameObject.vy;
-
-        resolveCollisionsWithBalls(gameObject);
         resolveCollisionsWithWalls(gameObject);
 
+    }
+    solveCollisions();
+
+    for (auto &gameObject : gameObjects) {
         float damping = 0.99;
         // Apply gravity
-        gameObject.vy += gravity;
         gameObject.vx *= damping;
         gameObject.vy *= damping;
+
+        gameObject.vy += gravity;
     }
 
+}
+
+void PhysicsEngine::solveCollisions(){
+    for (int i = 0; i < gameObjects.size(); ++i) {
+        for (int j = i; j < gameObjects.size(); ++j) {
+            resolveCollisionsWithBalls(gameObjects[i], gameObjects[j]);
+        }
+    }
 }
 
 
@@ -43,10 +53,9 @@ void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
     }
 }
 
-void PhysicsEngine::resolveCollisionsWithBalls(GameObject& gameObject) {
+void PhysicsEngine::resolveCollisionsWithBalls(GameObject& gameObject, GameObject& otherBall) {
     float velocityLoss = 1; // Adjust the velocity loss factor as needed
 
-    for (auto& otherBall : gameObjects) {
         if (&gameObject != &otherBall) { // Avoid self-collision
             float dx = gameObject.x - otherBall.x;
             float dy = gameObject.y - otherBall.y;
@@ -89,7 +98,6 @@ void PhysicsEngine::resolveCollisionsWithBalls(GameObject& gameObject) {
                     otherBall.x -= 0.5 * moveX;
                     otherBall.y -= 0.5 * moveY;
                 }
-            }
         }
     }
 }
