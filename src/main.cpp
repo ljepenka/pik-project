@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-int balls_to_add = 10;
+int balls_to_add = 200;
 void MainLoopStep()
 
 {
