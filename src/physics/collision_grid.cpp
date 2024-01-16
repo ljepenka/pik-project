@@ -4,7 +4,7 @@
 
 class CollisionCell {
 public:
-    static constexpr uint32_t cell_capacity = 200;
+    static constexpr uint32_t cell_capacity = 400;
 
     uint32_t objects_count = 0;
     uint32_t objects[cell_capacity] = {};
@@ -37,10 +37,10 @@ public:
     CollisionGrid(int width, int height) : Grid<CollisionCell>(width, height) {}
 
 
-    bool addObject(uint32_t x, uint32_t y, uint32_t object) {
+    int addObject(uint32_t x, uint32_t y, uint32_t object) {
 
         gridData[x * height + y].addObject(object);
-        return true;
+        return x * height + y;
     }
 
     void clearGrid() {

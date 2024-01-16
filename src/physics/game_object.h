@@ -4,4 +4,5 @@ public:
     float vx{}, vy{};    // Velocity
     float radius{};    // Radius
     float mass = 1.0;
+    int gridIndex = 0;
 };

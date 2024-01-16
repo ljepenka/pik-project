@@ -47,11 +47,11 @@ void PhysicsEngine::positionBallsInGrid() {
     grid.clearGrid();
 
     uint32_t i{0};
+
     for(auto &gameObject: gameObjects) {
-//        if(gameObject.x > 1.0f && gameObject.y > 1.0f) {
         Point gridCoord = mapToWorldToGrid(Point{gameObject.x, gameObject.y}, grid);
-        grid.addObject(gridCoord.x, gridCoord.y, i);
-//        }
+        int gridIndex = grid.addObject(gridCoord.x, gridCoord.y, i);
+        gameObject.gridIndex = gridIndex;
         i++;
     }
 }

@@ -27,10 +27,74 @@ PhysicsEngine physicsEngine = PhysicsEngine(gravity, threadPool);
 std::vector<GameObject> balls = std::vector<GameObject>();
 
 
+void drawGrid(int gridHeight, int gridWidth) {
+    glBegin(GL_LINES);
+    glColor3f(0.0f, 0.0f, 0.0f);
+
+    // Draw horizontal lines
+    for (int i = 0; i <= gridHeight; ++i) {
+        glVertex2f(-1.0, 2.0 * i / gridHeight - 1.0);
+        glVertex2f(1.0, 2.0 * i / gridHeight - 1.0);
+    }
+
+    // Draw vertical lines
+    for (int i = 0; i <= gridWidth; ++i) {
+        glVertex2f(2.0 * i / gridWidth - 1.0, -1.0);
+        glVertex2f(2.0 * i / gridWidth - 1.0, 1.0);
+    }
+
+    glEnd();
+}
+
+void getColor(int index, float& red, float& green, float& blue) {
+    // Example: Coloring cells based on a pattern (you can modify this logic)
+        const float frequency = 0.5;
+        red = sin(frequency * index + 0) * 0.5 + 0.5;
+        green = sin(frequency * index + 2) * 0.5 + 0.5;
+        blue = sin(frequency * index + 4) * 0.5 + 0.5;
+
+}
+
+
+void drawGridColor(int gridHeight, int gridWidth) {
+    glBegin(GL_QUADS);
+
+    float cellWidth = 2.0 / gridWidth;
+    float cellHeight = 2.0 / gridHeight;
+
+    for (int row = 0; row < gridHeight; ++row) {
+        for (int col = 0; col < gridWidth; ++col) {
+            int index = row * gridWidth + col;
+
+            float xMin = -1.0 + col * cellWidth;
+            float xMax = xMin + cellWidth;
+            float yMin = 1.0 - (row + 1) * cellHeight;
+            float yMax = yMin + cellHeight;
+
+            float red, green, blue;
+            getColor(index, red, green, blue);
+
+            glColor3f(red, green, blue);
+            glVertex2f(xMin, yMin);
+            glVertex2f(xMax, yMin);
+            glVertex2f(xMax, yMax);
+            glVertex2f(xMin, yMax);
+
+//            if (std::find(coloredCells.begin(), coloredCells.end(), index) == coloredCells.end()) {
+//                coloredCells.push_back(index);
+//            }
+        }
+    }
+
+    glEnd();
+}
+
+
 
 // Display callback function
 void display() {
     auto gameObjects = physicsEngine.getGameObjects();
+    drawGrid(physicsEngine.getGrid().height, physicsEngine.getGrid().width);
     // Draw balls
     for (int i = 0; i < gameObjects.size(); ++i) {
         glBegin(GL_TRIANGLE_FAN);
@@ -38,6 +102,10 @@ void display() {
             float angle = j * 3.14159265 / 180.0;
             float x = gameObjects[i].x + gameObjects[i].radius * std::cos(angle);
             float y = gameObjects[i].y + gameObjects[i].radius * std::sin(angle);
+            float red, green, blue;
+            int ind = gameObjects[i].gridIndex;
+            getColor(ind, red, green, blue);
+            glColor3f(red, green, blue);
             glVertex2f(x, y);
 //            std::cout << "x: " << x << " y: " << y << std::endl;
         }
