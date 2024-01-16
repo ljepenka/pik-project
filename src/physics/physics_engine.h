@@ -6,7 +6,7 @@
 class PhysicsEngine {
 public:
 
-    PhysicsEngine(float d, ThreadPool& tp) : threadPool(tp), grid(10, 10){
+    PhysicsEngine(float d, ThreadPool& tp) : threadPool(tp), grid(1, 1){
         gravity = d;
     }
 

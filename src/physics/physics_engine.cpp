@@ -4,19 +4,23 @@
 #include "point.h"
 
 void PhysicsEngine::update() {
+
+    for (auto &gameObject : gameObjects) {
+        gameObject.x += gameObject.vx;
+        gameObject.y += gameObject.vy;
+        resolveCollisionsWithWalls(gameObject);
+
+    }
+
     positionBallsInGrid();
     solveCollisions();
 
     for (auto &gameObject : gameObjects) {
-        // Update position based on velocity
-        gameObject.x += gameObject.vx;
-        gameObject.y += gameObject.vy;
-
-        resolveCollisionsWithWalls(gameObject);
-
-
-
+        float damping = 0.99;
         // Apply gravity
+        gameObject.vx *= damping;
+        gameObject.vy *= damping;
+
         gameObject.vy += gravity;
     }
 
