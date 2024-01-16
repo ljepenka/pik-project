@@ -6,7 +6,7 @@
 class PhysicsEngine {
 public:
 
-    PhysicsEngine(float d, ThreadPool& tp) : threadPool(tp), grid(10, 10){
+    PhysicsEngine(float d, ThreadPool& tp) : threadPool(tp), grid(3, 3){
         gravity = d;
     }
 
@@ -29,7 +29,7 @@ private:
 
     void solveCollisionThreaded(int cellNumber);
 
-    void processCell(const CollisionCell& c, uint32_t index);
+    void processCell(uint32_t index);
 
     void checkAtomCellCollisions(uint32_t atom_idx, const CollisionCell& c);
 

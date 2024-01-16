@@ -7,6 +7,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+
 # Find necessary packages
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
@@ -35,6 +38,9 @@ set(SOURCE_FILES
         src/common/grid.cpp
         src/physics/collision_grid.cpp
         src/thread_pool/thread_pool.cpp
+        src/physics2/collision_grid2.cpp
+        src/thread_pool/thread_pool2.cpp
+        src/physics2/physics_engine.cpp
 )
 
 

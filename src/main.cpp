@@ -4,8 +4,9 @@
 #include "imgui.h"
 #include "backends/imgui_impl_opengl2.h"
 #include "backends/imgui_impl_glut.h"
-#include "physics/physics_engine.h"
+#include "physics2/physics_engine.cpp"
 #include "imgui_internal.h"
+#include "thread_pool/thread_pool2.cpp"
 
 GLuint window;
 GLuint width = 1000, height = 1000;
@@ -21,8 +22,9 @@ float particle_size = 0.02;
 float gravity = -0.000;
 
 void MainLoopStep();
-ThreadPool threadPool(10);
-PhysicsEngine physicsEngine = PhysicsEngine(gravity, threadPool);
+tp::ThreadPool threadPool(6);
+//PhysicsEngine physicsEngine = PhysicsEngine(gravity, threadPool);
+PhysicSolver physicsEngine = PhysicSolver(glm::ivec2{2, 2}, threadPool);
 
 std::vector<GameObject> balls = std::vector<GameObject>();
 
@@ -100,8 +102,8 @@ void display() {
         glBegin(GL_TRIANGLE_FAN);
         for (int j = 0; j <= 360; ++j) {
             float angle = j * 3.14159265 / 180.0;
-            float x = gameObjects[i].x + gameObjects[i].radius * std::cos(angle);
-            float y = gameObjects[i].y + gameObjects[i].radius * std::sin(angle);
+            float x = gameObjects[i].position.x + gameObjects[i].radius * std::cos(angle);
+            float y = gameObjects[i].position.y + gameObjects[i].radius * std::sin(angle);
             float red, green, blue;
             int ind = gameObjects[i].gridIndex;
             getColor(ind, red, green, blue);
@@ -115,21 +117,22 @@ void display() {
 }
 
 // Timer callback function for animation
-void timer(int) {
-    physicsEngine.update();
-    glutPostRedisplay();
-    glutTimerFunc(16, timer, 0);  // 60 frames per second
-    if (ball_add_counter % particle_time_delta == 0) {
-        if (number_of_balls_to_add > 0) {
-            physicsEngine.addGameObject(GameObject{0, 0.8, particle_velocity_x, particle_velocity_y, particle_size, 100*particle_size});
-            number_of_balls_to_add--;
-            ball_add_counter++;
-            particle_counter++;
-        }
-    } else{
-        ball_add_counter++;
-    }
-}
+//void timer(int) {
+//    ImGuiIO& io = ImGui::GetIO(); (void)io;
+//    physicsEngine.update(io.DeltaTime);
+//    glutPostRedisplay();
+//    glutTimerFunc(16, timer, 0);  // 60 frames per second
+//    if (ball_add_counter % particle_time_delta == 0) {
+//        if (number_of_balls_to_add > 0) {
+//            physicsEngine.addObject(GameObject{{0.0, 0.8}, {particle_velocity_x, particle_velocity_y}, {0.0, 0.8}, particle_size, 100*particle_size});
+//            number_of_balls_to_add--;
+//            ball_add_counter++;
+//            particle_counter++;
+//        }
+//    } else{
+//        ball_add_counter++;
+//    }
+//}
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
@@ -138,11 +141,12 @@ int main(int argc, char** argv) {
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutCreateWindow("2D Ball Simulation");
     glutDisplayFunc(MainLoopStep);
-    glutTimerFunc(0, timer, 0);
+//    glutTimerFunc(0, timer, 0);
     glClearColor(0.0, 0.0, 0.0, 1.0);  // Black background
     gluOrtho2D(-1.0, 1.0, -1.0, 1.0);  // Set the coordinate system
 //    initializeBalls(10, 0, 1.0, 100, 0.1 );
-    physicsEngine.setGameObjects(balls);
+//    physicsEngine.setGameObjects(balls);
+    physicsEngine.clearGrid();
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -196,7 +200,7 @@ void MainLoopStep()
         ImGui::Text("Number of particles: %d", particle_counter);
 
         if(ImGui::Button("Clear balls")){
-            physicsEngine.setGameObjects(std::vector<GameObject>());
+            physicsEngine.clearGrid();
             particle_counter = 0;
         }
 
@@ -213,6 +217,20 @@ void MainLoopStep()
     glClear(GL_COLOR_BUFFER_BIT);
     //glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound, but prefer using the GL3+ code.
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+
+    physicsEngine.update(io.DeltaTime);
+    glutPostRedisplay();
+//    glutTimerFunc(16, timer, 0);  // 60 frames per second
+    if (ball_add_counter % particle_time_delta == 0) {
+        if (number_of_balls_to_add > 0) {
+            physicsEngine.addObject(GameObject{{0.0, 0.8}, {particle_velocity_x, particle_velocity_y}, {0.0, 0.8}, particle_size, 100*particle_size});
+            number_of_balls_to_add--;
+            ball_add_counter++;
+            particle_counter++;
+        }
+    } else{
+        ball_add_counter++;
+    }
 
     display();
 
