@@ -41,14 +41,14 @@ struct PhysicSolver
 //        GameObject& obj_2 = objects[atom_2_idx];
 //        const glm::vec2 o2_o1  = obj_1.position - obj_2.position;
 //        const float dist2 = o2_o1.x * o2_o1.x + o2_o1.y * o2_o1.y;
-//        if (dist2 < 1.0f && dist2 > eps) {
+//        if (dist2 < obj_1.radius && dist2 > eps) {
 //            const float dist          = sqrt(dist2);
-//            // Radius are all equal to 1.0f
-//            const float delta  = response_coef * 0.5f * (1.0f - dist);
+//            const float delta  = response_coef * 0.5f * (obj_1.radius - dist);
 //            const glm::vec2 col_vec = (o2_o1 / dist) * delta;
 //            obj_1.position += col_vec;
 //            obj_2.position -= col_vec;
 //        }
+
 
         float velocityLoss = 1; // Adjust the velocity loss factor as needed
         GameObject& gameObject = objects[atom_1_idx];
@@ -92,13 +92,14 @@ struct PhysicSolver
                         float moveY = overlap * normalY;
 
                         gameObject.position.x += 0.5 * moveX;
-                        gameObject.position.y+= 0.5 * moveY;
+                        gameObject.position.y += 0.5 * moveY;
                         otherBall.position.x -= 0.5 * moveX;
                         otherBall.position.y -= 0.5 * moveY;
                     }
 
+                }
             }
-        }
+
     }
 
     void checkAtomCellCollisions(uint32_t atom_idx, const CollisionCell& c)
@@ -112,10 +113,6 @@ struct PhysicSolver
     {
         for (uint32_t i{0}; i < c.objects_count; ++i) {
             const uint32_t atom_idx = c.objects[i];
-            if (index == 96) {
-                std::cout << "atom index: " << atom_idx << std::endl;
-            }
-            std::cout << "index index: " << index << std::endl;
             checkAtomCellCollisions(atom_idx, grid.data[index - 1]);
             checkAtomCellCollisions(atom_idx, grid.data[index]);
             checkAtomCellCollisions(atom_idx, grid.data[index + 1]);
@@ -219,11 +216,6 @@ struct PhysicSolver
     gridX = std::max(0, std::min(gridX, gridSize.x - 1));
     gridY = std::max(0, std::min(gridY, gridSize.y - 1));
 
-    // check if the grid coordinates are within bounds and not on the border
-//    if (gridX == 0 || gridX == gridSize.x - 1 || gridY == 0 || gridY == gridSize.y - 1) {
-//        //std::cout << "Out of bounds" << std::endl;
-//    }
-
     return {static_cast<float>(gridX), static_cast<float>(gridY)};
 }
 
@@ -234,12 +226,8 @@ struct PhysicSolver
         uint32_t i{0};
         for ( GameObject& obj : objects) {
             auto gridPosition = mapToWorldToGrid(obj.position, {grid.width, grid.height});
-            if (gridPosition.x * 10 + gridPosition.y == 96){
-                std::cout << "atom index: " << i << std::endl;
-            }
             // make sure gridPosition is not on edge
             if (gridPosition.x == 0 || gridPosition.x == grid.width -1 || gridPosition.y == 0 || gridPosition.y == grid.height -1) {
-                std::cout << "Out of bounds" << std::endl;
             }
             else{
                 grid.addAtom(static_cast<int32_t>(gridPosition.x), static_cast<int32_t>(gridPosition.y), i);

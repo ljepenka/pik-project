@@ -223,7 +223,7 @@ void MainLoopStep()
 //    glutTimerFunc(16, timer, 0);  // 60 frames per second
     if (ball_add_counter % particle_time_delta == 0) {
         if (number_of_balls_to_add > 0) {
-            physicsEngine.addObject(GameObject{{0.0, 0.8}, {particle_velocity_x, particle_velocity_y}, particle_size, 100*particle_size});
+            physicsEngine.addObject(GameObject{{0.0, 0.6}, {particle_velocity_x, particle_velocity_y}, particle_size, 100*particle_size});
             number_of_balls_to_add--;
             ball_add_counter++;
             particle_counter++;
