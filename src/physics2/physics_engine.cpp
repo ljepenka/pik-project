@@ -35,19 +35,69 @@ struct PhysicSolver
     // Checks if two atoms are colliding and if so create a new contact
     void solveContact(uint32_t atom_1_idx, uint32_t atom_2_idx)
     {
-        constexpr float response_coef = 1.0f;
-        constexpr float eps           = 0.0001f;
-        GameObject& obj_1 = objects[atom_1_idx];
-        GameObject& obj_2 = objects[atom_2_idx];
-        const glm::vec2 o2_o1  = obj_1.position - obj_2.position;
-        const float dist2 = o2_o1.x * o2_o1.x + o2_o1.y * o2_o1.y;
-        if (dist2 < 1.0f && dist2 > eps) {
-            const float dist          = sqrt(dist2);
-            // Radius are all equal to 1.0f
-            const float delta  = response_coef * 0.5f * (1.0f - dist);
-            const glm::vec2 col_vec = (o2_o1 / dist) * delta;
-            obj_1.position += col_vec;
-            obj_2.position -= col_vec;
+//        constexpr float response_coef = 1.0f;
+//        constexpr float eps           = 0.0001f;
+//        GameObject& obj_1 = objects[atom_1_idx];
+//        GameObject& obj_2 = objects[atom_2_idx];
+//        const glm::vec2 o2_o1  = obj_1.position - obj_2.position;
+//        const float dist2 = o2_o1.x * o2_o1.x + o2_o1.y * o2_o1.y;
+//        if (dist2 < 1.0f && dist2 > eps) {
+//            const float dist          = sqrt(dist2);
+//            // Radius are all equal to 1.0f
+//            const float delta  = response_coef * 0.5f * (1.0f - dist);
+//            const glm::vec2 col_vec = (o2_o1 / dist) * delta;
+//            obj_1.position += col_vec;
+//            obj_2.position -= col_vec;
+//        }
+
+        float velocityLoss = 1; // Adjust the velocity loss factor as needed
+        GameObject& gameObject = objects[atom_1_idx];
+        GameObject& otherBall = objects[atom_2_idx];
+
+            if (&gameObject != &otherBall) { // Avoid self-collision
+                float dx = gameObject.position.x - otherBall.position.x;
+                float dy = gameObject.position.y - otherBall.position.y;
+                float distance = std::sqrt(dx * dx + dy * dy);
+                float minDistance = gameObject.radius + otherBall.radius;
+
+                if (distance < minDistance) {
+                    // Balls are overlapping, resolve the collision
+
+                    // Calculate the unit normal and tangent
+                    float normalX = dx / distance;
+                    float normalY = dy / distance;
+
+                    // Calculate relative velocity
+                    float relativeVelocity = (gameObject.velocity.x - otherBall.velocity.x) * normalX +
+                                             (gameObject.velocity.y - otherBall.velocity.y) * normalY;
+
+                    // Resolve collision along the normal
+                    if (relativeVelocity < 0) {
+                        float impulse = (-(1) * relativeVelocity) /
+                                        (1 / gameObject.mass + 1 / otherBall.mass);
+                        gameObject.velocity.x += impulse / gameObject.mass * normalX;
+                        gameObject.velocity.y += impulse / gameObject.mass * normalY;
+                        otherBall.velocity.x -= impulse / otherBall.mass * normalX;
+                        otherBall.velocity.y -= impulse / otherBall.mass * normalY;
+
+                        // Apply velocity loss
+                        gameObject.velocity.x *= velocityLoss;
+                        gameObject.velocity.y *= velocityLoss;
+                        otherBall.velocity.x *= velocityLoss;
+                        otherBall.velocity.y *= velocityLoss;
+
+                        // Separate the balls using minimum translation vector (MTV)
+                        float overlap = minDistance - distance;
+                        float moveX = overlap * normalX;
+                        float moveY = overlap * normalY;
+
+                        gameObject.position.x += 0.5 * moveX;
+                        gameObject.position.y+= 0.5 * moveY;
+                        otherBall.position.x -= 0.5 * moveX;
+                        otherBall.position.y -= 0.5 * moveY;
+                    }
+
+            }
         }
     }
 
@@ -170,9 +220,9 @@ struct PhysicSolver
     gridY = std::max(0, std::min(gridY, gridSize.y - 1));
 
     // check if the grid coordinates are within bounds and not on the border
-    if (gridX == 0 || gridX == gridSize.x - 1 || gridY == 0 || gridY == gridSize.y - 1) {
-        //std::cout << "Out of bounds" << std::endl;
-    }
+//    if (gridX == 0 || gridX == gridSize.x - 1 || gridY == 0 || gridY == gridSize.y - 1) {
+//        //std::cout << "Out of bounds" << std::endl;
+//    }
 
     return {static_cast<float>(gridX), static_cast<float>(gridY)};
 }
@@ -182,7 +232,7 @@ struct PhysicSolver
         grid.clear();
         // Safety border to avoid adding object outside the grid
         uint32_t i{0};
-        for (const GameObject& obj : objects) {
+        for ( GameObject& obj : objects) {
             auto gridPosition = mapToWorldToGrid(obj.position, {grid.width, grid.height});
             if (gridPosition.x * 10 + gridPosition.y == 96){
                 std::cout << "atom index: " << i << std::endl;
@@ -194,6 +244,7 @@ struct PhysicSolver
             else{
                 grid.addAtom(static_cast<int32_t>(gridPosition.x), static_cast<int32_t>(gridPosition.y), i);
                 ++i;
+                obj.gridIndex = gridPosition.x * grid.height + gridPosition.y;
             }
 
         }
@@ -209,7 +260,7 @@ struct PhysicSolver
                 // Apply Verlet integration
                 obj.update(dt);
                 // Apply map borders collisions
-                const float margin = 0.01f;
+                const float margin = 2.0f / grid.width;
                 if (obj.position.x > 1.0f - margin) {
                     obj.position.x = 1.0f - margin;
                     obj.velocity.x = -obj.velocity.x;
