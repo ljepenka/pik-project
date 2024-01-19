@@ -8,6 +8,7 @@
 //#include "engine/common/index_vector.hpp"
 #include "../thread_pool/thread_pool2.cpp"
 #include <glm/glm.hpp>
+#include <iostream>
 
 struct PhysicSolver
 {
@@ -61,6 +62,10 @@ struct PhysicSolver
     {
         for (uint32_t i{0}; i < c.objects_count; ++i) {
             const uint32_t atom_idx = c.objects[i];
+            if (index == 96) {
+                std::cout << "atom index: " << atom_idx << std::endl;
+            }
+            std::cout << "index index: " << index << std::endl;
             checkAtomCellCollisions(atom_idx, grid.data[index - 1]);
             checkAtomCellCollisions(atom_idx, grid.data[index]);
             checkAtomCellCollisions(atom_idx, grid.data[index + 1]);
@@ -164,6 +169,11 @@ struct PhysicSolver
     gridX = std::max(0, std::min(gridX, gridSize.x - 1));
     gridY = std::max(0, std::min(gridY, gridSize.y - 1));
 
+    // check if the grid coordinates are within bounds and not on the border
+    if (gridX == 0 || gridX == gridSize.x - 1 || gridY == 0 || gridY == gridSize.y - 1) {
+        //std::cout << "Out of bounds" << std::endl;
+    }
+
     return {static_cast<float>(gridX), static_cast<float>(gridY)};
 }
 
@@ -174,8 +184,18 @@ struct PhysicSolver
         uint32_t i{0};
         for (const GameObject& obj : objects) {
             auto gridPosition = mapToWorldToGrid(obj.position, {grid.width, grid.height});
-            grid.addAtom(static_cast<int32_t>(gridPosition.x), static_cast<int32_t>(gridPosition.y), i);
-            ++i;
+            if (gridPosition.x * 10 + gridPosition.y == 96){
+                std::cout << "atom index: " << i << std::endl;
+            }
+            // make sure gridPosition is not on edge
+            if (gridPosition.x == 0 || gridPosition.x == grid.width -1 || gridPosition.y == 0 || gridPosition.y == grid.height -1) {
+                std::cout << "Out of bounds" << std::endl;
+            }
+            else{
+                grid.addAtom(static_cast<int32_t>(gridPosition.x), static_cast<int32_t>(gridPosition.y), i);
+                ++i;
+            }
+
         }
     }
 
@@ -185,21 +205,28 @@ struct PhysicSolver
             for (uint32_t i{start}; i < end; ++i) {
                 GameObject& obj = objects[i];
                 // Add gravity
-                obj.acceleration += gravity;
+//                obj.acceleration += gravity;
                 // Apply Verlet integration
                 obj.update(dt);
                 // Apply map borders collisions
-                const float margin = 2.0f;
-                if (obj.position.x > world_size.x - margin) {
-                    obj.position.x = world_size.x - margin;
-                } else if (obj.position.x < margin) {
-                    obj.position.x = margin;
+                const float margin = 0.01f;
+                if (obj.position.x > 1.0f - margin) {
+                    obj.position.x = 1.0f - margin;
+                    obj.velocity.x = -obj.velocity.x;
                 }
-                if (obj.position.y > world_size.y - margin) {
-                    obj.position.y = world_size.y - margin;
-                } else if (obj.position.y < margin) {
-                    obj.position.y = margin;
+                if (obj.position.x < -1.0f + margin) {
+                    obj.position.x = -1.0f + margin;
+                    obj.velocity.x = -obj.velocity.x;
                 }
+                if (obj.position.y > 1.0f - margin) {
+                    obj.position.y = 1.0f - margin;
+                    obj.velocity.y = -obj.velocity.y;
+                }
+                if (obj.position.y < -1.0f + margin) {
+                    obj.position.y = -1.0f + margin;
+                    obj.velocity.y = -obj.velocity.y;
+                }
+
             }
         });
     }

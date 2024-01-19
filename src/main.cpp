@@ -14,17 +14,17 @@ GLuint width = 1000, height = 1000;
 int number_of_balls_to_add = 0;
 int particle_counter = 0;
 int ball_add_counter = 0;
-float particle_velocity_x = 0.01;
-float particle_velocity_y = 0.01;
+float particle_velocity_x = 0.5f;
+float particle_velocity_y = 0.5f;
 int particle_time_delta = 5;
 float particle_size = 0.02;
 
 float gravity = -0.000;
 
 void MainLoopStep();
-tp::ThreadPool threadPool(6);
+tp::ThreadPool threadPool(1);
 //PhysicsEngine physicsEngine = PhysicsEngine(gravity, threadPool);
-PhysicSolver physicsEngine = PhysicSolver(glm::ivec2{2, 2}, threadPool);
+PhysicSolver physicsEngine = PhysicSolver(glm::ivec2{10, 10}, threadPool);
 
 std::vector<GameObject> balls = std::vector<GameObject>();
 
@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-int balls_to_add = 200;
+int balls_to_add = 1;
 void MainLoopStep()
 
 {
@@ -186,8 +186,8 @@ void MainLoopStep()
 
         ImGui::Separator();
 
-        ImGui::SliderFloat("Particle velocity x", &particle_velocity_x, -0.1, 0.1);
-        ImGui::SliderFloat("Particle velocity y", &particle_velocity_y, -0.1, 0.1);
+        ImGui::SliderFloat("Particle velocity x", &particle_velocity_x, -1.f, 1.f);
+        ImGui::SliderFloat("Particle velocity y", &particle_velocity_y, -1.f, 1.f);
         ImGui::SliderInt("Particle time delta", &particle_time_delta, 1, 60);
         ImGui::SliderFloat("Particle size", &particle_size, 0.01, 0.1);
 
@@ -223,7 +223,7 @@ void MainLoopStep()
 //    glutTimerFunc(16, timer, 0);  // 60 frames per second
     if (ball_add_counter % particle_time_delta == 0) {
         if (number_of_balls_to_add > 0) {
-            physicsEngine.addObject(GameObject{{0.0, 0.8}, {particle_velocity_x, particle_velocity_y}, {0.0, 0.8}, particle_size, 100*particle_size});
+            physicsEngine.addObject(GameObject{{0.0, 0.8}, {particle_velocity_x, particle_velocity_y}, particle_size, 100*particle_size});
             number_of_balls_to_add--;
             ball_add_counter++;
             particle_counter++;
