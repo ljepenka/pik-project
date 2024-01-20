@@ -6,7 +6,7 @@
 class PhysicsEngine {
 public:
 
-    PhysicsEngine(float d, ThreadPool& tp) : threadPool(tp), grid(10, 10){
+    PhysicsEngine(float d, ThreadPool& tp) : threadPool(tp), grid(30, 30){
         gravity = d;
     }
 
@@ -14,6 +14,7 @@ public:
     void update();
     void setGameObjects(std::vector<GameObject> gameObjects) { this->gameObjects = gameObjects; }
     void addGameObject(GameObject gameObject) { gameObjects.push_back(gameObject); }
+    void resizeGrid(int32_t width, int32_t height) { grid.resize(width, height); }
     std::vector<GameObject> getGameObjects() { return gameObjects; }
     CollisionGrid getGrid() { return grid; }
 

@@ -6,6 +6,7 @@
 #include "backends/imgui_impl_glut.h"
 #include "physics/physics_engine.h"
 #include "imgui_internal.h"
+#include <glm/glm.hpp>
 
 GLuint window;
 GLuint width = 1000, height = 1000;
@@ -17,8 +18,10 @@ float particle_velocity_x = 0.01;
 float particle_velocity_y = 0.01;
 int particle_time_delta = 5;
 float particle_size = 0.02;
+int particle_segments = 10;
 
 float gravity = -0.000;
+int grid_size = 30;
 
 void MainLoopStep();
 ThreadPool threadPool(10);
@@ -90,27 +93,45 @@ void drawGridColor(int gridHeight, int gridWidth) {
 }
 
 
+void drawCircle(float cx, float cy, float radius, int num_segments, glm::vec3 color) {
+    glBegin(GL_LINE_LOOP);
+    for (int i = 0; i < num_segments; i++) {
+        float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);
+        float x = radius * cosf(theta);
+        float y = radius * sinf(theta);
+        glColor3f(color.x, color.y, color.z);
+        glVertex2f(x + cx, y + cy);
+    }
+    glEnd();
+}
 
 // Display callback function
 void display() {
     auto gameObjects = physicsEngine.getGameObjects();
     drawGrid(physicsEngine.getGrid().height, physicsEngine.getGrid().width);
     // Draw balls
+    float red = 0.0, green = 0.0, blue = 0.0;
+
     for (int i = 0; i < gameObjects.size(); ++i) {
-        glBegin(GL_TRIANGLE_FAN);
-        for (int j = 0; j <= 360; ++j) {
-            float angle = j * 3.14159265 / 180.0;
-            float x = gameObjects[i].x + gameObjects[i].radius * std::cos(angle);
-            float y = gameObjects[i].y + gameObjects[i].radius * std::sin(angle);
-            float red, green, blue;
-            int ind = gameObjects[i].gridIndex;
-            getColor(ind, red, green, blue);
-            glColor3f(red, green, blue);
-            glVertex2f(x, y);
-//            std::cout << "x: " << x << " y: " << y << std::endl;
-        }
-        glEnd();
+        getColor(gameObjects[i].gridIndex, red, green, blue);
+        drawCircle(gameObjects[i].x, gameObjects[i].y, gameObjects[i].radius, particle_segments, glm::vec3(red, green, blue));
     }
+//    for (int i = 0; i < gameObjects.size(); ++i) {
+//        for (int j = 0; j <= 360; ++j) {
+//            glBegin(GL_TRIANGLE_FAN);
+//
+//            float angle = j * 3.14159265 / 180.0;
+//            float x = gameObjects[i].x + gameObjects[i].radius * std::cos(angle);
+//            float y = gameObjects[i].y + gameObjects[i].radius * std::sin(angle);
+//            float red, green, blue;
+//            int ind = gameObjects[i].gridIndex;
+//            getColor(ind, red, green, blue);
+//            glColor3f(red, green, blue);
+//            glVertex2f(x, y);
+////            std::cout << "x: " << x << " y: " << y << std::endl;
+//        }
+//        glEnd();
+//    }
 
 }
 
@@ -186,6 +207,11 @@ void MainLoopStep()
         ImGui::SliderFloat("Particle velocity y", &particle_velocity_y, -0.1, 0.1);
         ImGui::SliderInt("Particle time delta", &particle_time_delta, 1, 60);
         ImGui::SliderFloat("Particle size", &particle_size, 0.01, 0.1);
+        ImGui::SliderInt("Particle segments", &particle_segments, 3, 365);
+        if (ImGui::SliderInt("Grid size (nxn)", &grid_size, 1, 100)){
+            physicsEngine.resizeGrid(grid_size, grid_size);
+        }
+
 
         if(ImGui::Button("Add balls")){
             number_of_balls_to_add = balls_to_add;
