@@ -11,13 +11,7 @@ void PhysicsEngine::update_objects() {
             gameObject.x += gameObject.vx;
             gameObject.y += gameObject.vy;
             resolveCollisionsWithWalls(gameObject);
-            gameObject.collided = false;
 
-
-            float damping = 0.99;
-            // Apply gravity
-            gameObject.vx *= damping;
-            gameObject.vy *= damping;
 
             gameObject.vy += gravity;
         }

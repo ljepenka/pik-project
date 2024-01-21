@@ -25,7 +25,7 @@ float gravity = -0.000;
 int grid_size = 30;
 
 void MainLoopStep();
-ThreadPool threadPool(10);
+ThreadPool threadPool(1);
 PhysicsEngine physicsEngine = PhysicsEngine(gravity, threadPool);
 
 std::vector<GameObject> balls = std::vector<GameObject>();
@@ -102,6 +102,7 @@ void display() {
         getColor(gameObjects[i].gridIndex, red, green, blue);
         auto gameObject = gameObjects[i];
         drawCircle(gameObject.x, gameObject.y, gameObject.radius, particle_segments, glm::vec3(red, green, blue), gameObject.collided);
+        gameObject.collided = false;
     }
 
 
@@ -174,7 +175,7 @@ void MainLoopStep()
 
         ImGui::Begin("Ball Collision Detection DEMO");                          // Create a window called "Hello, world!" and append into it.
 
-        ImGui::SliderInt("Number of objects to add", &balls_to_add, 0, 1000);
+        ImGui::SliderInt("Number of objects to add", &balls_to_add, 0, 10000);
 
         ImGui::Separator();
 
