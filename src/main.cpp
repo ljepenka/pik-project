@@ -19,6 +19,7 @@ float particle_velocity_y = 0.01;
 int particle_time_delta = 5;
 float particle_size = 0.02;
 int particle_segments = 10;
+bool showGrid = false;
 
 float gravity = -0.000;
 int grid_size = 30;
@@ -59,42 +60,11 @@ void getColor(int index, float& red, float& green, float& blue) {
 }
 
 
-void drawGridColor(int gridHeight, int gridWidth) {
-    glBegin(GL_QUADS);
 
-    float cellWidth = 2.0 / gridWidth;
-    float cellHeight = 2.0 / gridHeight;
-
-    for (int row = 0; row < gridHeight; ++row) {
-        for (int col = 0; col < gridWidth; ++col) {
-            int index = row * gridWidth + col;
-
-            float xMin = -1.0 + col * cellWidth;
-            float xMax = xMin + cellWidth;
-            float yMin = 1.0 - (row + 1) * cellHeight;
-            float yMax = yMin + cellHeight;
-
-            float red, green, blue;
-            getColor(index, red, green, blue);
-
-            glColor3f(red, green, blue);
-            glVertex2f(xMin, yMin);
-            glVertex2f(xMax, yMin);
-            glVertex2f(xMax, yMax);
-            glVertex2f(xMin, yMax);
-
-//            if (std::find(coloredCells.begin(), coloredCells.end(), index) == coloredCells.end()) {
-//                coloredCells.push_back(index);
-//            }
-        }
-    }
-
-    glEnd();
-}
+void drawCircle(float cx, float cy, float radius, int num_segments, glm::vec3 color, bool collided = false) {
 
 
-void drawCircle(float cx, float cy, float radius, int num_segments, glm::vec3 color) {
-    glBegin(GL_LINE_LOOP);
+    glBegin(GL_TRIANGLE_FAN );
     for (int i = 0; i < num_segments; i++) {
         float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);
         float x = radius * cosf(theta);
@@ -103,35 +73,37 @@ void drawCircle(float cx, float cy, float radius, int num_segments, glm::vec3 co
         glVertex2f(x + cx, y + cy);
     }
     glEnd();
+    glm::vec3 borderColor = glm::vec3(0.0, 0.0, 0.0);
+    if (collided) {
+        glBegin(GL_LINE_LOOP);
+
+        for (int i = 0; i < num_segments; i++) {
+            float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);
+            float x = radius * cosf(theta);
+            float y = radius * sinf(theta);
+            glColor3f(0.f, 0.f, 0.f);
+            glVertex2f(x + cx, y + cy);
+        }
+        glEnd();
+    }
 }
 
 // Display callback function
 void display() {
     auto gameObjects = physicsEngine.getGameObjects();
-    drawGrid(physicsEngine.getGrid().height, physicsEngine.getGrid().width);
+    if(showGrid){
+        drawGrid(physicsEngine.getGrid().height, physicsEngine.getGrid().width);
+
+    }
     // Draw balls
     float red = 0.0, green = 0.0, blue = 0.0;
 
     for (int i = 0; i < gameObjects.size(); ++i) {
         getColor(gameObjects[i].gridIndex, red, green, blue);
-        drawCircle(gameObjects[i].x, gameObjects[i].y, gameObjects[i].radius, particle_segments, glm::vec3(red, green, blue));
+        auto gameObject = gameObjects[i];
+        drawCircle(gameObject.x, gameObject.y, gameObject.radius, particle_segments, glm::vec3(red, green, blue), gameObject.collided);
     }
-//    for (int i = 0; i < gameObjects.size(); ++i) {
-//        for (int j = 0; j <= 360; ++j) {
-//            glBegin(GL_TRIANGLE_FAN);
-//
-//            float angle = j * 3.14159265 / 180.0;
-//            float x = gameObjects[i].x + gameObjects[i].radius * std::cos(angle);
-//            float y = gameObjects[i].y + gameObjects[i].radius * std::sin(angle);
-//            float red, green, blue;
-//            int ind = gameObjects[i].gridIndex;
-//            getColor(ind, red, green, blue);
-//            glColor3f(red, green, blue);
-//            glVertex2f(x, y);
-////            std::cout << "x: " << x << " y: " << y << std::endl;
-//        }
-//        glEnd();
-//    }
+
 
 }
 
@@ -188,25 +160,32 @@ void MainLoopStep()
 
 {
 
+
     // Start the Dear ImGui frame
     ImGui_ImplOpenGL2_NewFrame();
     ImGui_ImplGLUT_NewFrame();
     ImGui::NewFrame();
+
+
+
     ImGuiIO& io = ImGui::GetIO();
 
     {
 
-        ImGui::Begin("Imgui DEMO window");                          // Create a window called "Hello, world!" and append into it.
+        ImGui::Begin("Ball Collision Detection DEMO");                          // Create a window called "Hello, world!" and append into it.
 
-        ImGui::Text("2D gravity ball simulator.");               // Display some text (you can use a format strings too)
-        ImGui::SliderInt("Number of balls to add", &balls_to_add, 0, 1000);
+        ImGui::SliderInt("Number of objects to add", &balls_to_add, 0, 1000);
 
         ImGui::Separator();
 
         ImGui::SliderFloat("Particle velocity x", &particle_velocity_x, -0.1, 0.1);
         ImGui::SliderFloat("Particle velocity y", &particle_velocity_y, -0.1, 0.1);
         ImGui::SliderInt("Particle time delta", &particle_time_delta, 1, 60);
-        ImGui::SliderFloat("Particle size", &particle_size, 0.01, 0.1);
+        if(ImGui::SliderFloat("Particle size", &particle_size, 0.001, 0.04)){
+            for(auto &gameObject: physicsEngine.getGameObjects()){
+                gameObject.radius = particle_size;
+           }
+        }
         ImGui::SliderInt("Particle segments", &particle_segments, 3, 365);
         if (ImGui::SliderInt("Grid size (nxn)", &grid_size, 1, 100)){
             physicsEngine.resizeGrid(grid_size, grid_size);
@@ -216,6 +195,7 @@ void MainLoopStep()
         if(ImGui::Button("Add balls")){
             number_of_balls_to_add = balls_to_add;
         }
+        ImGui::Checkbox("Show grid", &showGrid);
 
 
 
@@ -227,10 +207,14 @@ void MainLoopStep()
         }
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::Text("Mouse position x= %.3f y= %.3f, Grid coordinates x=0, x=0", io.MousePos.x, io.MousePos.y);
+        glm::vec2 mouseWorldPos = glm::vec2{io.MousePos.x / width * 2.0f - 1.0f, io.MousePos.y / height * 2.0f - 1.0f};
+        glm::vec2 mousePosGrid = physicsEngine.mapToWorldToGrid(mouseWorldPos, physicsEngine.getGrid());
+        ImGui::Text("Mouse position x= %.3f y= %.3f, Grid coordinates x=%d, y=%d (index = %d)", mouseWorldPos.x, mouseWorldPos.y, (int)mousePosGrid.x, (int)mousePosGrid.y, (int)(mousePosGrid.x * physicsEngine.getGrid().height + mousePosGrid.y));
 
         ImGui::End();
     }
+
+
 
     // Rendering
     ImGui::Render();
@@ -238,9 +222,10 @@ void MainLoopStep()
     glClearColor(0.5f, 0.5f, 0.5f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
     //glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound, but prefer using the GL3+ code.
+    display();
+
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 
-    display();
 
     glutSwapBuffers();
 

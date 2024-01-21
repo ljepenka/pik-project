@@ -5,4 +5,5 @@ public:
     float radius{};    // Radius
     float mass = 1.0;
     int gridIndex = 0;
+    bool collided = false;
 };
