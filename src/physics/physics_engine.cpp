@@ -189,23 +189,40 @@ void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
 }
 
 void PhysicsEngine::resolveCollisionsWithBalls(uint32_t gameObjectId, uint32_t otherBallId) {
-    constexpr float response_coef = 1.2f;
-    constexpr float eps           = 0.00001f;
-    GameObject& obj_1 = gameObjects[gameObjectId];
-    GameObject& obj_2 = gameObjects[otherBallId];
-    const glm::vec2 o2_o1  = {obj_1.x - obj_2.x, obj_1.y - obj_2.y};
-    const float dist2 = o2_o1.x * o2_o1.x + o2_o1.y * o2_o1.y;
-    const float radii_sum = obj_1.radius + obj_2.radius;
-    if (dist2 < radii_sum*radii_sum && dist2 > eps) {
-        obj_1.collided = true;
-        obj_2.collided = true;
-        const float dist          = sqrt(dist2);
-        // Radius are all equal to 1.0f
-        const float delta  = response_coef * 0.5f * (radii_sum - dist);
-        const glm::vec2 col_vec = (o2_o1 / dist) * delta;
-        obj_1.x += col_vec.x;
-        obj_1.y += col_vec.y;
-        obj_2.x -= col_vec.x;
-        obj_2.y -= col_vec.y;
+    constexpr float restitution_coefficient = 0.8f;
+    if (gameObjectId == otherBallId) {
+        return;
+    }
+    GameObject& obj1 = gameObjects[gameObjectId];
+    GameObject& obj2 = gameObjects[otherBallId];
+    float dx = obj2.x - obj1.x;
+    float dy = obj2.y - obj1.y;
+    float distance = std::sqrt(dx * dx + dy * dy);
+
+    // Check if the objects are overlapping
+    if (distance < obj1.radius + obj2.radius) {
+        obj1.collided = true;
+        obj2.collided = true;
+        // Calculate collision normal
+        float nx = dx / distance;
+        float ny = dy / distance;
+
+        // Calculate relative velocity
+        float relative_vx = obj2.vx - obj1.vx;
+        float relative_vy = obj2.vy - obj1.vy;
+        float relative_speed = relative_vx * nx + relative_vy * ny;
+
+        // Check if objects are moving towards each other
+        if (relative_speed < 0) {
+            // Calculate impulse
+            float impulse = (1 + restitution_coefficient) * relative_speed /
+                            (1 / obj1.mass + 1 / obj2.mass);
+
+            // Update velocities
+            obj1.vx += impulse * nx / obj1.mass;
+            obj1.vy += impulse * ny / obj1.mass;
+            obj2.vx -= impulse * nx / obj2.mass;
+            obj2.vy -= impulse * ny / obj2.mass;
+        }
     }
 }

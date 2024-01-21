@@ -20,6 +20,7 @@ int particle_time_delta = 5;
 float particle_size = 0.02;
 int particle_segments = 10;
 bool showGrid = false;
+bool showBallColor = false;
 
 float gravity = -0.000;
 int grid_size = 30;
@@ -99,9 +100,16 @@ void display() {
     float red = 0.0, green = 0.0, blue = 0.0;
 
     for (int i = 0; i < gameObjects.size(); ++i) {
+        glm::vec3 color = glm::vec3(0.0, 0.0, 0.0);
+        if (showBallColor) {
         getColor(gameObjects[i].gridIndex, red, green, blue);
+            color = glm::vec3(red, green, blue);
+    }
+        else{
+            color = gameObjects[i].color;
+        }
         auto gameObject = gameObjects[i];
-        drawCircle(gameObject.x, gameObject.y, gameObject.radius, particle_segments, glm::vec3(red, green, blue), gameObject.collided);
+        drawCircle(gameObject.x, gameObject.y, gameObject.radius, particle_segments, color, gameObject.collided);
         gameObject.collided = false;
     }
 
@@ -115,7 +123,10 @@ void timer(int) {
     glutTimerFunc(16, timer, 0);  // 60 frames per second
     if (ball_add_counter % particle_time_delta == 0) {
         if (number_of_balls_to_add > 0) {
-            physicsEngine.addGameObject(GameObject{0, 0.8, particle_velocity_x, particle_velocity_y, particle_size, 100*particle_size});
+            float red = 0.0, green = 0.0, blue = 0.0;
+            getColor(particle_counter, red, green, blue);
+            glm::vec3 color = glm::vec3(red, green, blue);
+            physicsEngine.addGameObject(GameObject{0, 0.8, particle_velocity_x, particle_velocity_y, particle_size, 100*particle_size, color});
             number_of_balls_to_add--;
             ball_add_counter++;
             particle_counter++;
@@ -197,6 +208,7 @@ void MainLoopStep()
             number_of_balls_to_add = balls_to_add;
         }
         ImGui::Checkbox("Show grid", &showGrid);
+        ImGui::Checkbox("Show ball color", &showBallColor);
 
 
 
