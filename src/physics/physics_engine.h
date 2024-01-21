@@ -28,13 +28,13 @@ private:
 
     void solveCollisions();
 
-    void solveCollisionThreaded(int cellNumber);
+    void solveCollisionThreaded(uint32_t start, uint32_t end);
 
     void processCell(const CollisionCell& c, uint32_t index);
 
     void checkAtomCellCollisions(uint32_t atom_idx, const CollisionCell& c);
 
-    void updateObjects_multi();
+    void update_objects();
 
     void resolveCollisionsWithWalls(GameObject &gameObject);
 

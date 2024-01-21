@@ -3,28 +3,34 @@
 #include "physics_engine.h"
 #include "point.h"
 
+void PhysicsEngine::update_objects() {
+
+    threadPool.dispatch(gameObjects.size(), [&](uint32_t start, uint32_t end) {
+        for (uint32_t i = start; i < end; i++) {
+            GameObject &gameObject = gameObjects[i];
+            gameObject.x += gameObject.vx;
+            gameObject.y += gameObject.vy;
+            resolveCollisionsWithWalls(gameObject);
+
+            float damping = 0.99;
+            // Apply gravity
+            gameObject.vx *= damping;
+            gameObject.vy *= damping;
+
+            gameObject.vy += gravity;
+
+        }
+    });
+}
+
+
 void PhysicsEngine::update() {
-
-    for (auto &gameObject : gameObjects) {
-        gameObject.x += gameObject.vx;
-        gameObject.y += gameObject.vy;
-        resolveCollisionsWithWalls(gameObject);
-
-    }
 
     positionBallsInGrid();
     solveCollisions();
-
-    for (auto &gameObject : gameObjects) {
-        float damping = 0.99;
-        // Apply gravity
-        gameObject.vx *= damping;
-        gameObject.vy *= damping;
-
-        gameObject.vy += gravity;
-    }
-
+    update_objects();
 }
+
 Point mapToWorldToGrid(const Point& worldCoord, const CollisionGrid& grid) {
     // Assuming world coordinates range from -1 to 1
     float normalizedX = (worldCoord.x + 1.0f) / 2.0f;
@@ -119,24 +125,45 @@ void PhysicsEngine::processCell(const CollisionCell& c, uint32_t index)
     }
 }
 
-void PhysicsEngine::solveCollisionThreaded(int cellNumber)
+void PhysicsEngine::solveCollisionThreaded(uint32_t start, uint32_t end)
 {
-    processCell(grid.gridData[cellNumber], cellNumber);
-
+    for(uint32_t i = start; i < end; i++) {
+        processCell(grid.gridData[i], i);
+    }
 }
 
 void PhysicsEngine::solveCollisions()
 {
-    // Multi-thread grid
-//    const uint32_t thread_count = threadPool.size;
-//    const uint32_t slice_count  = thread_count * 2;
-//    const uint32_t slice_size   = (grid.width / slice_count) * grid.height;
-//    const uint32_t last_cell    = (2 * (thread_count - 1) + 2) * slice_size;
+
+    const uint32_t thread_count = threadPool.size; // 2
+
+    const uint32_t thread_zone_size = ceil((grid.width * grid.height) / thread_count);  // 36 / 2 = 16
     // Find collisions in two passes to avoid data races
 
     // First collision pass
-    for (uint32_t i{0}; i < grid.width * grid.height; ++i) {
-        solveCollisionThreaded(i);
+    for (uint32_t i{0}; i < thread_count; ++i) {
+        threadPool.addTask([this, i, thread_zone_size] {
+            uint32_t const start = i * thread_zone_size;
+            uint32_t const end = start + thread_zone_size;
+            solveCollisionThreaded(start, end);
+        });
+    }
+
+    uint32_t lastCell = thread_count * thread_zone_size;
+    if(lastCell < grid.gridData.size()) {
+        threadPool.addTask([this, lastCell] {
+            solveCollisionThreaded(lastCell, grid.gridData.size());
+        });
+    }
+
+    threadPool.waitTaskCompletion();
+
+    for (uint32_t i{0}; i < thread_count; ++i) {
+        threadPool.addTask([this, i, thread_zone_size]{
+            uint32_t const start = i * thread_zone_size;
+            uint32_t const end = start + thread_zone_size - 1;
+            solveCollisionThreaded(start, end);
+        });
     }
 
     }
