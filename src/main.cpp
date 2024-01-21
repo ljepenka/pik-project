@@ -22,7 +22,7 @@ int particle_segments = 10;
 bool showGrid = false;
 bool showBallColor = false;
 
-float gravity = -0.000;
+float gravity = -0.00f;
 int grid_size = 30;
 
 void MainLoopStep();
@@ -91,7 +91,7 @@ void drawCircle(float cx, float cy, float radius, int num_segments, glm::vec3 co
 
 // Display callback function
 void display() {
-    auto gameObjects = physicsEngine.getGameObjects();
+    auto& gameObjects = physicsEngine.getGameObjects();
     if(showGrid){
         drawGrid(physicsEngine.getGrid().height, physicsEngine.getGrid().width);
 
@@ -108,9 +108,10 @@ void display() {
         else{
             color = gameObjects[i].color;
         }
-        auto gameObject = gameObjects[i];
+        GameObject& gameObject = gameObjects[i];
         drawCircle(gameObject.x, gameObject.y, gameObject.radius, particle_segments, color, gameObject.collided);
         gameObject.collided = false;
+
     }
 
 
@@ -185,6 +186,7 @@ void MainLoopStep()
     {
 
         ImGui::Begin("Ball Collision Detection DEMO");                          // Create a window called "Hello, world!" and append into it.
+        ImGui::Text("Thread pool size: %d", threadPool.size);               // Display some text (you can use a format strings too
 
         ImGui::SliderInt("Number of objects to add", &balls_to_add, 0, 10000);
 

@@ -12,6 +12,7 @@ find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(GLEW REQUIRED)
+find_package(Threads REQUIRED)
 
 
 
