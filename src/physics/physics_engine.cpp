@@ -1,7 +1,7 @@
 #include <valarray>
 #include <iostream>
+#include <glm/vec2.hpp>
 #include "physics_engine.h"
-#include "point.h"
 
 void PhysicsEngine::update() {
 
@@ -9,6 +9,7 @@ void PhysicsEngine::update() {
         gameObject.x += gameObject.vx;
         gameObject.y += gameObject.vy;
         resolveCollisionsWithWalls(gameObject);
+        gameObject.collided = false;
 
     }
 
@@ -25,7 +26,7 @@ void PhysicsEngine::update() {
     }
 
 }
-Point mapToWorldToGrid(const Point& worldCoord, const CollisionGrid& grid) {
+glm::vec2 PhysicsEngine::mapToWorldToGrid(const glm::vec2& worldCoord, const CollisionGrid& grid) {
     // Assuming world coordinates range from -1 to 1
     float normalizedX = (worldCoord.x + 1.0f) / 2.0f;
     float normalizedY = (worldCoord.y + 1.0f) / 2.0f;
@@ -49,7 +50,7 @@ void PhysicsEngine::positionBallsInGrid() {
     uint32_t i{0};
 
     for(auto &gameObject: gameObjects) {
-        Point gridCoord = mapToWorldToGrid(Point{gameObject.x, gameObject.y}, grid);
+        glm::vec2 gridCoord = mapToWorldToGrid(glm::vec2{gameObject.x, gameObject.y}, grid);
         int gridIndex = grid.addObject(gridCoord.x, gridCoord.y, i);
         gameObject.gridIndex = gridIndex;
         i++;
@@ -168,53 +169,24 @@ void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
 }
 
 void PhysicsEngine::resolveCollisionsWithBalls(uint32_t gameObjectId, uint32_t otherBallId) {
-    float velocityLoss = 1; // Adjust the velocity loss factor as needed
-    GameObject& gameObject = gameObjects[gameObjectId];
-    GameObject& otherBall = gameObjects[otherBallId];
-    if (&gameObject != &otherBall) { // Avoid self-collision
-        float dx = gameObject.x - otherBall.x;
-        float dy = gameObject.y - otherBall.y;
-        float distance = std::sqrt(dx * dx + dy * dy);
-        float minDistance = gameObject.radius + otherBall.radius;
-
-        if (distance < minDistance) {
-            // Balls are overlapping, resolve the collision
-
-            // Calculate the unit normal and tangent
-            float normalX = dx / distance;
-            float normalY = dy / distance;
-
-            // Calculate relative velocity
-            float relativeVelocity = (gameObject.vx - otherBall.vx) * normalX +
-                                     (gameObject.vy - otherBall.vy) * normalY;
-
-            // Resolve collision along the normal
-            if (relativeVelocity < 0) {
-                float impulse = (-(1) * relativeVelocity) /
-                                (1 / gameObject.mass + 1 / otherBall.mass);
-                gameObject.vx += impulse / gameObject.mass * normalX;
-                gameObject.vy += impulse / gameObject.mass * normalY;
-                otherBall.vx -= impulse / otherBall.mass * normalX;
-                otherBall.vy -= impulse / otherBall.mass * normalY;
-
-                // Apply velocity loss
-                gameObject.vx *= velocityLoss;
-                gameObject.vy *= velocityLoss;
-                otherBall.vx *= velocityLoss;
-                otherBall.vy *= velocityLoss;
-
-                // Separate the balls using minimum translation vector (MTV)
-                float overlap = minDistance - distance;
-                float moveX = overlap * normalX;
-                float moveY = overlap * normalY;
-
-                gameObject.x += 0.5 * moveX;
-                gameObject.y += 0.5 * moveY;
-                otherBall.x -= 0.5 * moveX;
-                otherBall.y -= 0.5 * moveY;
-            }
-        }
-
+    constexpr float response_coef = 1.2f;
+    constexpr float eps           = 0.00001f;
+    GameObject& obj_1 = gameObjects[gameObjectId];
+    GameObject& obj_2 = gameObjects[otherBallId];
+    const glm::vec2 o2_o1  = {obj_1.x - obj_2.x, obj_1.y - obj_2.y};
+    const float dist2 = o2_o1.x * o2_o1.x + o2_o1.y * o2_o1.y;
+    const float radii_sum = obj_1.radius + obj_2.radius;
+    if (dist2 < radii_sum*radii_sum && dist2 > eps) {
+        obj_1.collided = true;
+        obj_2.collided = true;
+        const float dist          = sqrt(dist2);
+        // Radius are all equal to 1.0f
+        const float delta  = response_coef * 0.5f * (radii_sum - dist);
+        const glm::vec2 col_vec = (o2_o1 / dist) * delta;
+        obj_1.x += col_vec.x;
+        obj_1.y += col_vec.y;
+        obj_2.x -= col_vec.x;
+        obj_2.y -= col_vec.y;
     }
 }
 
