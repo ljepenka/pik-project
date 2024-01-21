@@ -25,7 +25,7 @@ float gravity = -0.000;
 int grid_size = 30;
 
 void MainLoopStep();
-ThreadPool threadPool(2);
+ThreadPool threadPool(10);
 PhysicsEngine physicsEngine = PhysicsEngine(gravity, threadPool);
 
 std::vector<GameObject> balls = std::vector<GameObject>();

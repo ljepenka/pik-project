@@ -2,7 +2,6 @@
 #include <iostream>
 #include <glm/vec2.hpp>
 #include "physics_engine.h"
-#include "point.h"
 
 void PhysicsEngine::update_objects() {
 
@@ -21,9 +20,9 @@ void PhysicsEngine::update_objects() {
             gameObject.vy *= damping;
 
             gameObject.vy += gravity;
-    }
-});
-
+        }
+    });
+}
 
 void PhysicsEngine::update() {
 
@@ -135,12 +134,13 @@ void PhysicsEngine::solveCollisionThreaded(uint32_t start, uint32_t end)
 void PhysicsEngine::solveCollisions()
 {
 
-    const uint32_t thread_count = threadPool.size; // 2
+    const uint32_t thread_count = threadPool.size <= grid.height * grid.width ? threadPool.size: grid.height * grid.width; // 2
 
     const uint32_t thread_zone_size = ceil((grid.width * grid.height) / thread_count);  // 36 / 2 = 16
     // Find collisions in two passes to avoid data races
 
     // First collision pass
+
     for (uint32_t i{0}; i < thread_count; ++i) {
         threadPool.addTask([this, i, thread_zone_size] {
             uint32_t const start = i * thread_zone_size;
@@ -215,4 +215,3 @@ void PhysicsEngine::resolveCollisionsWithBalls(uint32_t gameObjectId, uint32_t o
         obj_2.y -= col_vec.y;
     }
 }
-
