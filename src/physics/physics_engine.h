@@ -8,7 +8,7 @@
 class PhysicsEngine {
 public:
 
-    PhysicsEngine(float d, ThreadPool& tp) : threadPool(tp), grid(30, 30){
+    PhysicsEngine(float d, ThreadPool& tp, int gridSize) : threadPool(tp), grid(gridSize, gridSize){
         gravity = d;
     }
 
@@ -19,8 +19,8 @@ public:
     void resizeGrid(int32_t width, int32_t height) { grid.resize(width, height); }
     std::vector<GameObject>& getGameObjects() { return gameObjects; }
     CollisionGrid getGrid() { return grid; }
-    glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, const CollisionGrid &grid);
-
+    glm::ivec2 getGridSize() { return glm::ivec2(grid.width, grid.height); }
+    glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize);
 
 private:
     float gravity;  // Gravity force

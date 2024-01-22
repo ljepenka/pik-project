@@ -24,18 +24,18 @@ void PhysicsEngine::update() {
     solveCollisions();
     update_objects();
 }
-glm::vec2 PhysicsEngine::mapToWorldToGrid(const glm::vec2& worldCoord, const CollisionGrid& grid) {
+glm::vec2 PhysicsEngine::mapToWorldToGrid(const glm::vec2& worldCoord, glm::ivec2 gridSize) {
     // Assuming world coordinates range from -1 to 1
     float normalizedX = (worldCoord.x + 1.0f) / 2.0f;
     float normalizedY = (worldCoord.y + 1.0f) / 2.0f;
 
     // Mapping normalized coordinates to grid coordinates
-    int gridX = static_cast<int>(normalizedX * grid.width);
-    int gridY = static_cast<int>(normalizedY * grid.height);
+    int gridX = static_cast<int>(normalizedX * gridSize.x);
+    int gridY = static_cast<int>(normalizedY * gridSize.y);
 
     // Make sure the grid coordinates are within bounds
-    gridX = std::max(0, std::min(gridX, grid.width - 1));
-    gridY = std::max(0, std::min(gridY, grid.height - 1));
+    gridX = std::max(0, std::min(gridX, gridSize.x - 1));
+    gridY = std::max(0, std::min(gridY, gridSize.y - 1));
 
     return {static_cast<float>(gridX), static_cast<float>(gridY)};
 }
@@ -48,7 +48,7 @@ void PhysicsEngine::positionBallsInGrid() {
     uint32_t i{0};
 
     for(auto &gameObject: gameObjects) {
-        glm::vec2 gridCoord = mapToWorldToGrid(glm::vec2{gameObject.x, gameObject.y}, grid);
+        glm::vec2 gridCoord = mapToWorldToGrid(glm::vec2{gameObject.x, gameObject.y}, getGridSize());
         int gridIndex = grid.addObject(gridCoord.x, gridCoord.y, i);
         gameObject.gridIndex = gridIndex;
         i++;
@@ -152,20 +152,8 @@ void PhysicsEngine::solveCollisions()
 
     threadPool.waitTaskCompletion();
 
-    for (uint32_t i{0}; i < thread_count; ++i) {
-        threadPool.addTask([this, i, thread_zone_size]{
-            uint32_t const start = i * thread_zone_size;
-            uint32_t const end = start + thread_zone_size - 1;
-            solveCollisionThreaded(start, end);
-        });
     }
 
-
-
-    }
-
-
-//}
 
 
 void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
@@ -190,6 +178,7 @@ void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
     }
 }
 
+
 void PhysicsEngine::resolveCollisionsWithBalls(uint32_t gameObjectId, uint32_t otherBallId) {
     constexpr float restitution_coefficient = 0.8f;
     if (gameObjectId == otherBallId) {
@@ -199,12 +188,21 @@ void PhysicsEngine::resolveCollisionsWithBalls(uint32_t gameObjectId, uint32_t o
     GameObject& obj2 = gameObjects[otherBallId];
     float dx = obj2.x - obj1.x;
     float dy = obj2.y - obj1.y;
-    float distance = std::sqrt(dx * dx + dy * dy);
-
+    float distance2 = dx * dx + dy * dy;
+    float r1 = obj1.radius;
+    float r2 = obj2.radius;
     // Check if the objects are overlapping
-    if (distance < obj1.radius + obj2.radius) {
+    if (distance2 < (r1 + r2)*(r1 + r2)) {
+        float distance = sqrt(distance2);
         obj1.collided = true;
         obj2.collided = true;
+        // displace balls
+        float overlap = 0.5f * (distance - obj1.radius - obj2.radius);
+        obj1.x += overlap * dx / distance;
+        obj1.y += overlap * dy / distance;
+        obj2.x -= overlap * dx / distance;
+        obj2.y -= overlap * dy / distance;
+
         // Calculate collision normal
         float nx = dx / distance;
         float ny = dy / distance;
