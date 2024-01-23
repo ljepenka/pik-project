@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <iostream>
 
 
 namespace tp
@@ -25,18 +26,17 @@ namespace tp
 
         void getTask(std::function<void()>& target_callback)
         {
-            {
                 std::lock_guard<std::mutex> lock_guard{m_mutex};
                 if (m_tasks.empty()) {
                     return;
                 }
                 target_callback = std::move(m_tasks.front());
                 m_tasks.pop();
-            }
         }
 
         static void wait()
         {
+            //std::cout << "Thread with id " << std::this_thread::get_id() << " is waitingn" << std::endl;
             std::this_thread::yield();
         }
 
@@ -50,6 +50,7 @@ namespace tp
         void workDone()
         {
             m_remaining_tasks--;
+            std::cout << "Thread with id" << std::this_thread::get_id() << " is done with task" <<std::endl;
         }
     };
 
@@ -75,10 +76,15 @@ namespace tp
         void run()
         {
             while (m_running) {
+
                 m_queue->getTask(m_task);
                 if (m_task == nullptr) {
+                    std::cout << "getTask was null thread id = " << std::this_thread::get_id() << std::endl;
+
                     TaskQueue::wait();
                 } else {
+                    std::cout << "getTask wasnull thread id = " << std::this_thread::get_id() << std::endl;
+
                     m_task();
                     m_queue->workDone();
                     m_task = nullptr;

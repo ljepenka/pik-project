@@ -4,7 +4,7 @@
 
 class CollisionCell {
 public:
-    static constexpr uint32_t cell_capacity = 1000;
+    static constexpr uint32_t cell_capacity = 3;
 
     uint32_t objects_count = 0;
     uint32_t objects[cell_capacity] = {};

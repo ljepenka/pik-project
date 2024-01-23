@@ -16,22 +16,23 @@ GLuint window;
 GLuint width = 1000, height = 1000;
 
 int particle_counter = 0;
-float particle_velocity_x = 0.001;
-float particle_velocity_y = -0.005;
-int particle_time_delta = 1;
-float particle_size = 0.004;
+float particle_velocity_x = -5.f;
+float particle_velocity_y = 5.f;
+int particle_time_delta = 5;
+float particle_size = 0.005;
 int particle_segments = 10;
-int balls_to_add = 6000;
+int balls_to_add = 2000;
 
 bool showGrid = false;
 bool showBallColor = false;
 bool global_particle_size = false;
 bool renderGameObjects = true;
 
-float gravity = -0.00f;
-int grid_size = 85;
+glm::vec2 gravity = glm::vec2(0.0, 0.f);
+int grid_size = 500;
+int thread_count = 1;
 #ifdef THREADED
-tp::ThreadPool threadPool(6);
+tp::ThreadPool threadPool(2);
 #endif
 
 glm::vec2 lastSourcePosition = glm::vec2(0.0, 0.0);
@@ -55,8 +56,13 @@ std::vector<ParticleSource> particleSources = {
         ParticleSource{glm::vec2(0.3, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
         ParticleSource{glm::vec2(0.4, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
         ParticleSource{glm::vec2(0.5, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.6 ,0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-
+        ParticleSource{glm::vec2(0.6 ,0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.7, 0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.8, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.3, 0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.4, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.5, 0.4), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.6 ,0.5), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
 };
 
 void MainLoopStep();
@@ -75,6 +81,8 @@ void drawGrid(glm::ivec2 gridSize){
     int gridHeight = gridSize.y;
     int gridWidth = gridSize.x;
     glBegin(GL_LINES);
+
+
     glColor3f(0.0f, 0.0f, 0.0f);
     // Draw horizontal lines
     for (int i = 0; i <= gridHeight; ++i) {
@@ -102,7 +110,7 @@ void getColor(int index, float& red, float& green, float& blue) {
 
 
 
-void drawCircle(float cx, float cy, float radius, int num_segments, glm::vec3 color, bool collided = false) {
+void drawCircle(glm::vec2 position, float radius, int num_segments, glm::vec3 color, bool collided = false) {
 
 
     glBegin(GL_TRIANGLE_FAN );
@@ -111,21 +119,21 @@ void drawCircle(float cx, float cy, float radius, int num_segments, glm::vec3 co
         float x = radius * cosf(theta);
         float y = radius * sinf(theta);
         glColor3f(color.x, color.y, color.z);
-        glVertex2f(x + cx, y + cy);
+        glVertex2f(x + position.x, y + position.y);
     }
     glEnd();
-    if (collided) {
-        glBegin(GL_LINE_LOOP);
-
-        for (int i = 0; i < num_segments; i++) {
-            float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);
-            float x = radius * cosf(theta);
-            float y = radius * sinf(theta);
-            glColor3f(0.f, 0.f, 0.f);
-            glVertex2f(x + cx, y + cy);
-        }
-        glEnd();
-    }
+//    if (collided) {
+//        glBegin(GL_LINE_LOOP);
+//
+//        for (int i = 0; i < num_segments; i++) {
+//            float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);
+//            float x = radius * cosf(theta);
+//            float y = radius * sinf(theta);
+//            glColor3f(0.f, 0.f, 0.f);
+//            glVertex2f(x + cx, y + cy);
+//        }
+//        glEnd();
+//    }
 }
 
 // Display callback function
@@ -150,7 +158,7 @@ void display() {
         }
         GameObject& gameObject = gameObjects[i];
         if(renderGameObjects) {
-            drawCircle(gameObject.x, gameObject.y, gameObject.radius, particle_segments, color, gameObject.collided);
+            drawCircle(gameObject.position, gameObject.radius, particle_segments, color, gameObject.collided);
         }
         gameObject.collided = false;
 
@@ -173,8 +181,9 @@ void displaySourcePoints() {
 
 // Timer callback function for animation
 void timer(int) {
+
+
     // imgui position in world
-    physicsEngine.update();
     glutPostRedisplay();
     glutTimerFunc(16, timer, 0);  // 60 frames per second
         for (auto& source: particleSources) {
@@ -183,7 +192,7 @@ void timer(int) {
                     float red = 0.0, green = 0.0, blue = 0.0;
                     getColor(particle_counter, red, green, blue);
                     glm::vec3 color = glm::vec3(red, green, blue);
-                    physicsEngine.addGameObject(GameObject{source.position.x, source.position.y, source.velocity.x, source.velocity.y, source.radius, 100*source.radius, color});
+                    physicsEngine.addGameObject(GameObject{source.position, source.position, {particle_velocity_x, particle_velocity_y}, source.radius, 100*source.radius, color});
                     source.number_of_balls--;
                     particle_counter++;
                 }
@@ -219,7 +228,11 @@ int main(int argc, char** argv) {
     ImGui_ImplOpenGL2_Init();
     ImGui_ImplGLUT_InstallFuncs();
 
+    for(auto &source: particleSources){
+        source.active = true;
+    }
     glutMainLoop();
+
 
     // Cleanup
     ImGui_ImplOpenGL2_Shutdown();
@@ -231,6 +244,8 @@ int main(int argc, char** argv) {
 void MainLoopStep()
 
 {
+
+   // auto start_time = std::chrono::high_resolution_clock::now();
 
 
     // Start the Dear ImGui frame
@@ -263,6 +278,10 @@ void MainLoopStep()
         ImGui::SliderInt("Particle segments", &particle_segments, 3, 365);
         if (ImGui::SliderInt("Grid size (nxn)", &grid_size, 1, 500)){
             physicsEngine.resizeGrid(grid_size, grid_size);
+        }
+
+        if (ImGui::SliderInt("Thread count", &thread_count, 1, 12)){
+            physicsEngine.setThreadCount(thread_count);
         }
 
 
@@ -302,7 +321,10 @@ void MainLoopStep()
         glm::vec2 mousePosGrid = physicsEngine.mapToWorldToGrid(mouseWorldPos, physicsEngine.getGridSize());
         ImGui::Text("Mouse position x= %.3f y= %.3f, Grid coordinates x=%d, y=%d (index = %d)", mouseWorldPos.x, mouseWorldPos.y, (int)mousePosGrid.x, (int)mousePosGrid.y, (int)(mousePosGrid.x * physicsEngine.getGrid().height + mousePosGrid.y));
 
-
+        ImGui::Text("Ration cell size to particle size: %.3f and cell capacity is %d", physicsEngine.getCellSize() / particle_size, CollisionCell::cell_capacity);
+        if(physicsEngine.getCellSize() / particle_size > CollisionCell::cell_capacity){
+            ImGui::Text("WARNING: Cell size is too big compared to particle size, this will cause particles to be skipped");
+        }
         ImGui::End();
     }
 
@@ -313,11 +335,20 @@ void MainLoopStep()
     glViewport(0, 0, (GLsizei)io.DisplaySize.x, (GLsizei)io.DisplaySize.y);
     glClearColor(0.5f, 0.5f, 0.5f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
+    float dt = 1.0f / io.Framerate;
+    physicsEngine.update(dt);
+
     display();
 
     ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
 
 
     glutSwapBuffers();
+
+//    auto end_time = std::chrono::high_resolution_clock::now();
+//
+//    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+//    auto fps = 1000.0f / duration.count();
+//    std::cout << "Time taken by rendering: " << duration.count() << " millisecondsa" << std::endl;
 
 }

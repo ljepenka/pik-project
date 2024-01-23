@@ -16,7 +16,7 @@ public:
     }
 #else
 
-    PhysicsEngine(float d, int gridSize) : grid(gridSize, gridSize){
+    PhysicsEngine(glm::vec2 d, int gridSize) : grid(gridSize, gridSize){
         gravity = d;
     }
 #endif
@@ -30,10 +30,17 @@ public:
     CollisionGrid& getGrid() { return grid; }
     glm::ivec2 getGridSize() { return glm::ivec2(grid.width, grid.height); }
     glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize);
+    float getCellSize() {return 2.0f / grid.height; }
+    void setThreadCount(int threadCount) { this->threadCount = threadCount; }
+    void update_objects(float dt);
+    void update(float dt);
+
+
 
 private:
-    float gravity;  // Gravity force
+    glm::vec2 gravity;  // Gravity force
     std::vector<GameObject> gameObjects;
+    int threadCount = 1;
 #ifdef THREADED
     tp::ThreadPool& threadPool;
 #endif
@@ -56,6 +63,10 @@ private:
 
     void resolveCollisionsWithBalls(uint32_t gameObject, uint32_t other);
 
+    void positionBallsThreaded(int start, int end);
+
+
+    void solveContact(uint32_t atom_1_idx, uint32_t atom_2_idx);
 };
 
 
