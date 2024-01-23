@@ -9,17 +9,11 @@
 
 class PhysicsEngine {
 public:
-#ifdef THREADED
 
-    PhysicsEngine(float d, tp::ThreadPool& tp, int gridSize) : threadPool(tp), grid(gridSize, gridSize){
-        gravity = d;
-    }
-#else
 
     PhysicsEngine(glm::vec2 d, int gridSize, int sub_steps) : grid(gridSize, gridSize), sub_steps(sub_steps){
         gravity = d;
     }
-#endif
 
     ~PhysicsEngine() {}
     void update();
@@ -29,7 +23,9 @@ public:
     std::vector<GameObject>& getGameObjects() { return gameObjects; }
     CollisionGrid& getGrid() { return grid; }
     glm::ivec2 getGridSize() { return glm::ivec2(grid.width, grid.height); }
-    glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize);
+//    glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize);
+    std::vector<glm::vec2> mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize, float radius);
+
     float getCellSize() {return 2.0f / grid.height; }
     void setThreadCount(int threadCount) { this->threadCount = threadCount; }
     void update_objects(float dt);
@@ -37,15 +33,13 @@ public:
     void setSubSteps(int sub_steps) { this->sub_steps = sub_steps; }
 
 
+    void setGravity(glm::vec2 gravity) { this->gravity = gravity; }
 
 private:
     glm::vec2 gravity;  // Gravity force
     std::vector<GameObject> gameObjects;
     int threadCount = 1;
     int sub_steps = 8;
-#ifdef THREADED
-    tp::ThreadPool& threadPool;
-#endif
 
     CollisionGrid grid;
 
@@ -59,8 +53,6 @@ private:
 
     void checkAtomCellCollisions(uint32_t atom_idx, const CollisionCell& c);
 
-    void update_objects();
-
     void resolveCollisionsWithWalls(GameObject &gameObject);
 
     void resolveCollisionsWithBalls(uint32_t gameObject, uint32_t other);
@@ -70,7 +62,6 @@ private:
 
     void solveContact(uint32_t atom_1_idx, uint32_t atom_2_idx);
 
-    glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize, float radius);
 };
 
 
