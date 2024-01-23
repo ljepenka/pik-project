@@ -3,19 +3,29 @@
 #include <glm/vec2.hpp>
 #include "physics_engine.h"
 
+// #define THREADED
 void PhysicsEngine::update_objects() {
+#ifdef THREADED
+        threadPool.dispatch(gameObjects.size(), [&](uint32_t start, uint32_t end) {
+            for (uint32_t i = start; i < end; i++) {
+                GameObject &gameObject = gameObjects[i];
+                gameObject.x += gameObject.vx;
+                gameObject.y += gameObject.vy;
+                resolveCollisionsWithWalls(gameObject);
 
-    threadPool.dispatch(gameObjects.size(), [&](uint32_t start, uint32_t end) {
-        for (uint32_t i = start; i < end; i++) {
-            GameObject &gameObject = gameObjects[i];
+
+                gameObject.vy += gravity;
+            }
+        });
+
+#else
+    for (auto &gameObject: gameObjects) {
             gameObject.x += gameObject.vx;
             gameObject.y += gameObject.vy;
             resolveCollisionsWithWalls(gameObject);
-
-
-            gameObject.vy += gravity;
         }
-    });
+
+#endif
 }
 
 void PhysicsEngine::update() {
@@ -63,7 +73,7 @@ void PhysicsEngine::checkAtomCellCollisions(uint32_t atom_idx, const CollisionCe
 }
 
 bool checkIndex(uint32_t index, uint32_t width, uint32_t height) {
-    return index >= 0 && index < width * height;
+    return  index < width * height;
 }
 
 void PhysicsEngine::processCell(const CollisionCell& c, uint32_t index)
@@ -125,55 +135,63 @@ void PhysicsEngine::solveCollisionThreaded(uint32_t start, uint32_t end)
     }
 }
 
-void PhysicsEngine::solveCollisions()
-{
+void PhysicsEngine::solveCollisions() {
+#ifdef THREADED
+        const uint32_t thread_count =
+                (int) threadPool.size <= grid.height * grid.width ? threadPool.size : grid.height * grid.width; // 2
 
-    const uint32_t thread_count = threadPool.size <= grid.height * grid.width ? threadPool.size: grid.height * grid.width; // 2
+        const uint32_t thread_zone_size = ceil((grid.width * grid.height) / thread_count);  // 36 / 2 = 16
+        // Find collisions in two passes to avoid data races
 
-    const uint32_t thread_zone_size = ceil((grid.width * grid.height) / thread_count);  // 36 / 2 = 16
-    // Find collisions in two passes to avoid data races
+        // First collision pass
 
-    // First collision pass
+        for (uint32_t i{0}; i < thread_count; ++i) {
+            threadPool.addTask([this, i, thread_zone_size] {
+                uint32_t const start = i * thread_zone_size;
+                uint32_t const end = start + thread_zone_size;
+                solveCollisionThreaded(start, end);
+            });
+        }
 
-    for (uint32_t i{0}; i < thread_count; ++i) {
-        threadPool.addTask([this, i, thread_zone_size] {
-            uint32_t const start = i * thread_zone_size;
-            uint32_t const end = start + thread_zone_size;
-            solveCollisionThreaded(start, end);
-        });
-    }
+        uint32_t lastCell = thread_count * thread_zone_size;
+        if (lastCell < grid.gridData.size()) {
+            threadPool.addTask([this, lastCell] {
+                solveCollisionThreaded(lastCell, grid.gridData.size());
+            });
+        }
 
-    uint32_t lastCell = thread_count * thread_zone_size;
-    if(lastCell < grid.gridData.size()) {
-        threadPool.addTask([this, lastCell] {
-            solveCollisionThreaded(lastCell, grid.gridData.size());
-        });
-    }
+        threadPool.waitForCompletion();
 
-    threadPool.waitTaskCompletion();
 
-    }
+#else
+solveCollisionThreaded(0, grid.width * grid.height);
+#endif
+
+}
 
 
 
 void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
         // Check for collision with walls
     float damping = 0.95;
+    // calulcate margin to be cell size
+    float marginY = 2.0f / grid.width;
+    float marginX = 2.0f / grid.height;
     // Horizontal walls
-    if (gameObject.x - gameObject.radius < -1.0) {
-        gameObject.x = -1.0 + gameObject.radius;  // Adjust position to be just outside the left wall
+    if (gameObject.x - gameObject.radius < -1.0 + marginX) {
+        gameObject.x = -1.f + marginX + gameObject.radius;  // Adjust position to be just outside the left wall
         gameObject.vx = std::abs(gameObject.vx) * damping;  // Reverse velocity on collision with the left wall
-    } else if (gameObject.x + gameObject.radius > 1.0) {
-        gameObject.x = 1.0 - gameObject.radius;  // Adjust position to be just outside the right wall
+    } else if (gameObject.x + gameObject.radius > 1.0 - marginX) {
+        gameObject.x = 1.f- marginX - gameObject.radius;  // Adjust position to be just outside the right wall
         gameObject.vx = -std::abs(gameObject.vx) * damping;  // Reverse velocity on collision with the right wall
     }
 
     // Vertical walls
-    if (gameObject.y - gameObject.radius < -1.0) {
-        gameObject.y = -1.0 + gameObject.radius;  // Adjust position to be just outside the bottom wall
+    if (gameObject.y - gameObject.radius < -1.0 + marginY) {
+        gameObject.y = -1.f + marginY + gameObject.radius;  // Adjust position to be just outside the bottom wall
         gameObject.vy = std::abs(gameObject.vy) * damping;  // Reverse velocity on collision with the bottom wall
-    } else if (gameObject.y + gameObject.radius > 1.0) {
-        gameObject.y = 1.0 - gameObject.radius;  // Adjust position to be just outside the top wall
+    } else if (gameObject.y + gameObject.radius > 1.0 - marginY) {
+        gameObject.y = 1.f - marginY - gameObject.radius;  // Adjust position to be just outside the top wall
         gameObject.vy = -std::abs(gameObject.vy) * damping;  // Reverse velocity on collision with the top wall
     }
 }

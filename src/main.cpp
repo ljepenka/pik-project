@@ -8,6 +8,10 @@
 #include "imgui_internal.h"
 #include <glm/glm.hpp>
 
+// #define THREADED
+
+
+
 GLuint window;
 GLuint width = 1000, height = 1000;
 
@@ -15,9 +19,9 @@ int particle_counter = 0;
 float particle_velocity_x = 0.001;
 float particle_velocity_y = -0.005;
 int particle_time_delta = 1;
-float particle_size = 0.005;
+float particle_size = 0.004;
 int particle_segments = 10;
-int balls_to_add = 4000;
+int balls_to_add = 6000;
 
 bool showGrid = false;
 bool showBallColor = false;
@@ -26,8 +30,9 @@ bool renderGameObjects = true;
 
 float gravity = -0.00f;
 int grid_size = 85;
-ThreadPool threadPool(1);
-
+#ifdef THREADED
+tp::ThreadPool threadPool(6);
+#endif
 
 glm::vec2 lastSourcePosition = glm::vec2(0.0, 0.0);
 struct ParticleSource{
@@ -49,15 +54,20 @@ std::vector<ParticleSource> particleSources = {
         ParticleSource{glm::vec2(0.2, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
         ParticleSource{glm::vec2(0.3, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
         ParticleSource{glm::vec2(0.4, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.5, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.6 ,0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
 
 };
 
 void MainLoopStep();
 
 void displaySourcePoints();
-
+#ifdef THREADED
 PhysicsEngine physicsEngine = PhysicsEngine(gravity, threadPool, grid_size);
+#else
+PhysicsEngine physicsEngine = PhysicsEngine(gravity, grid_size);
 
+#endif
 std::vector<GameObject> balls = std::vector<GameObject>();
 
 
@@ -104,7 +114,6 @@ void drawCircle(float cx, float cy, float radius, int num_segments, glm::vec3 co
         glVertex2f(x + cx, y + cy);
     }
     glEnd();
-    glm::vec3 borderColor = glm::vec3(0.0, 0.0, 0.0);
     if (collided) {
         glBegin(GL_LINE_LOOP);
 
@@ -130,7 +139,7 @@ void display() {
     // Draw balls
     float red = 0.0, green = 0.0, blue = 0.0;
 
-    for (int i = 0; i < gameObjects.size(); ++i) {
+    for (size_t i = 0; i < gameObjects.size(); ++i) {
         glm::vec3 color = glm::vec3(0.0, 0.0, 0.0);
         if (showBallColor) {
         getColor(gameObjects[i].gridIndex, red, green, blue);
@@ -234,7 +243,9 @@ void MainLoopStep()
 
     {
         ImGui::Begin("Interactive GUI panel");
+#ifdef THREADED
         ImGui::Text("Thread pool size: %d", threadPool.size);
+#endif
 
         ImGui::SliderInt("Number of particles per source", &balls_to_add, 0, 10000);
 
@@ -250,7 +261,7 @@ void MainLoopStep()
             }
         }
         ImGui::SliderInt("Particle segments", &particle_segments, 3, 365);
-        if (ImGui::SliderInt("Grid size (nxn)", &grid_size, 1, 300)){
+        if (ImGui::SliderInt("Grid size (nxn)", &grid_size, 1, 500)){
             physicsEngine.resizeGrid(grid_size, grid_size);
         }
 
@@ -278,8 +289,8 @@ void MainLoopStep()
         ImGui::Checkbox("Change global particle size", &global_particle_size);
 
 
-
         ImGui::Text("Number of particles: %d", particle_counter);
+        ImGui::Text("Number of cells: %d", grid_size*grid_size);
 
         if(ImGui::Button("Clear particles")){
             physicsEngine.setGameObjects(std::vector<GameObject>());

@@ -5,12 +5,21 @@
 #include <glm/glm.hpp>
 #include "point.h"
 
+// #define THREADED
+
 class PhysicsEngine {
 public:
+#ifdef THREADED
 
-    PhysicsEngine(float d, ThreadPool& tp, int gridSize) : threadPool(tp), grid(gridSize, gridSize){
+    PhysicsEngine(float d, tp::ThreadPool& tp, int gridSize) : threadPool(tp), grid(gridSize, gridSize){
         gravity = d;
     }
+#else
+
+    PhysicsEngine(float d, int gridSize) : grid(gridSize, gridSize){
+        gravity = d;
+    }
+#endif
 
     ~PhysicsEngine() {}
     void update();
@@ -18,15 +27,18 @@ public:
     void addGameObject(GameObject gameObject) { gameObjects.push_back(gameObject); }
     void resizeGrid(int32_t width, int32_t height) { grid.resize(width, height); }
     std::vector<GameObject>& getGameObjects() { return gameObjects; }
-    CollisionGrid getGrid() { return grid; }
+    CollisionGrid& getGrid() { return grid; }
     glm::ivec2 getGridSize() { return glm::ivec2(grid.width, grid.height); }
     glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize);
 
 private:
     float gravity;  // Gravity force
     std::vector<GameObject> gameObjects;
+#ifdef THREADED
+    tp::ThreadPool& threadPool;
+#endif
+
     CollisionGrid grid;
-    ThreadPool& threadPool;
 
     void positionBallsInGrid();
 
