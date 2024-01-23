@@ -16,7 +16,7 @@ public:
     }
 #else
 
-    PhysicsEngine(glm::vec2 d, int gridSize) : grid(gridSize, gridSize){
+    PhysicsEngine(glm::vec2 d, int gridSize, int sub_steps) : grid(gridSize, gridSize), sub_steps(sub_steps){
         gravity = d;
     }
 #endif
@@ -34,6 +34,7 @@ public:
     void setThreadCount(int threadCount) { this->threadCount = threadCount; }
     void update_objects(float dt);
     void update(float dt);
+    void setSubSteps(int sub_steps) { this->sub_steps = sub_steps; }
 
 
 
@@ -41,6 +42,7 @@ private:
     glm::vec2 gravity;  // Gravity force
     std::vector<GameObject> gameObjects;
     int threadCount = 1;
+    int sub_steps = 8;
 #ifdef THREADED
     tp::ThreadPool& threadPool;
 #endif
@@ -67,6 +69,8 @@ private:
 
 
     void solveContact(uint32_t atom_1_idx, uint32_t atom_2_idx);
+
+    glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize, float radius);
 };
 
 

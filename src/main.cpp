@@ -18,19 +18,20 @@ GLuint width = 1000, height = 1000;
 int particle_counter = 0;
 float particle_velocity_x = -5.f;
 float particle_velocity_y = 5.f;
-int particle_time_delta = 5;
-float particle_size = 0.005;
+int particle_time_delta = 10;
+float particle_size = 0.02;
 int particle_segments = 10;
-int balls_to_add = 2000;
+int balls_to_add = 200;
 
 bool showGrid = false;
 bool showBallColor = false;
 bool global_particle_size = false;
 bool renderGameObjects = true;
 
-glm::vec2 gravity = glm::vec2(0.0, 0.f);
-int grid_size = 500;
+glm::vec2 gravity = glm::vec2(0.0, -9.f);
+int grid_size = 10;
 int thread_count = 1;
+int physics_step = 8;
 #ifdef THREADED
 tp::ThreadPool threadPool(2);
 #endif
@@ -52,17 +53,17 @@ std::vector<ParticleSource> particleSources = {
         ParticleSource{glm::vec2(0.5, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size , balls_to_add, particle_time_delta, false},
         ParticleSource{glm::vec2(-0.6, -0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size , balls_to_add, particle_time_delta, false},
         ParticleSource{glm::vec2(0.1, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.2, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.3, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.4, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.5, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.6 ,0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.7, 0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.8, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.3, 0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.4, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.5, 0.4), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.6 ,0.5), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.2, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.3, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.4, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.5, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.6 ,0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.7, 0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.8, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.3, 0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.4, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.5, 0.4), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.6 ,0.5), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
 };
 
 void MainLoopStep();
@@ -71,7 +72,7 @@ void displaySourcePoints();
 #ifdef THREADED
 PhysicsEngine physicsEngine = PhysicsEngine(gravity, threadPool, grid_size);
 #else
-PhysicsEngine physicsEngine = PhysicsEngine(gravity, grid_size);
+PhysicsEngine physicsEngine = PhysicsEngine(gravity, grid_size, physics_step);
 
 #endif
 std::vector<GameObject> balls = std::vector<GameObject>();
@@ -282,6 +283,9 @@ void MainLoopStep()
 
         if (ImGui::SliderInt("Thread count", &thread_count, 1, 12)){
             physicsEngine.setThreadCount(thread_count);
+        }
+        if (ImGui::SliderInt("Physics substeps", &physics_step, 1, 32)){
+            physicsEngine.setSubSteps(physics_step);
         }
 
 
