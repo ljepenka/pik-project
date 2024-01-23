@@ -109,10 +109,32 @@ Abstract
 
 %We want to lower costs with energy efficiency as well
 \section{Introduction}
-
+U interaktivnim simulacijama i računalnim igrama, ključno je brzo i precizno detektirati sudare izmedu objekata zbog funkcionalnosti te interaktivnosti. Što su scenariji u videoigrama složeniji, to su algoritmi za detekciju sudara zahtjevniji u smislu računalnih resursa. Ovaj zahtjev može rezultirati smanjenjem performansi, što utječe na korisničko iskustvo. Navedeni problem postaje posebno izražen kod izvodenja u stvarnom vremenu, gdje je brza reakcija presudna.\\
+Ideja ovog projekta je razviti model paralelizacije u C++ za algoritam detekcije sudara koji efikasno koristi višedretvenost na procesoru. Simulacije će biti vizualizirane korištenjem OpenGL, programskim sučeljem za razvoj grafičkih aplikacija. Navedeni alat omogućuje programerima renderiranje 2D i 3D scena. Cilj projekta je optimizirati performanse algoritma za detekciju sudara kroz raspodjelu zadataka na više jezgri procesora, koristeći podržane mehanizme višedretvenosti.\\
+Testiranje paralelizacije algoritma provoditi će se na simuliranih scenarijima padajućih loptica različitih ulaznih parametara. Mjerit će se brzina izvodenja algoritma te korištenje računalnih resursa kako bi pratili efikasnost paralelizacije.
 \section{Background}
-
 \subsection{Theoretical concepts}
+Integracija Verletova algoritma je matematička metoda koja se često koristi za izračunavanje putanja kretanja čestica u računalnoj grafici. Algoritam integrira Newtonove jednadžbe gibanja.
+U jednadžbi Verletove integracije  \( \mathbf{x}_n \) predstavlja poziciju na koraku n,  \( \mathbf{a}_n \) predstavlja akceleraciju na koraku n.
+\[
+\mathbf{x}_{n+1} = 2\mathbf{x}_n - \mathbf{x}_{n-1} + \mathbf{a}_n \Delta t^2
+\]
+Pojednostavljivanjem jednadžbe dobivamo sljedeće:
+\[
+\mathbf{x}_{n+1} = \mathbf{x}_n + - \mathbf{v}_{n}\Delta t 
+\]
+Za implementaciju simulacije sudara loptica potrebno je minimizirati preklapanje izmedu loptica. Vrijednost preklapanja dvije loptice računamo oduzimanjem udaljenosti izmedu središta loptica od zbroja njihovih radijusa.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{image.png}
+    \caption{Preklapanje loptica}
+    \label{fig:enter-label}
+\end{figure}
+
+ Medutim, za samu simulaciju potrebno je računati preklapanja svih loptica unutar simulacije kako bi mogli otkloniti sva preklapanja loptica. Sljedeće je moguće napraviti naivnim pristupom u kojem iteriramo prvo po svakoj loptici, a zatim po ostalim lopticama te pomičemo loptice ako se preklapaju. Naivni pristup je ispravan u kontekstu otklanjanja preklapanja, ali je vrlo spor zbog složenosti izvodenja. Broj provjera preklapanja jednak je broju loptica na kvadrat. \\ 
+Optimalan pristup problemu preklapanja loptica je podjela prostora na kvadratne dijelove. Odredujemo da je duljina stranice kvadrata ista kao i dijametar kuglice. Zatim svakom kvadratnom dijelu prostora pridodjeljujemo loptice čije središte se nalazi u njemu. Ovim korakom svaki dio dobiva listu loptica. Nakon toga iteriramo kroz sve kvadratne dijelove i računamo udaljenosti izmedu trenutnog i susjednog kvadratnog dijela prostora. U iteracije nisu uključeni “vanjski” dijelovi.
+
 
 \subsection{Related work}
 
