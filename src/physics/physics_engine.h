@@ -29,12 +29,19 @@ public:
 
 
     void setGravity(glm::vec2 gravity) { this->gravity = gravity; }
+    glm::vec2 getUpperLeftWorldCorner() { return upperLeftWorldCorner; }
+    glm::vec2 getBottomRightWorldCorner() { return bottomRightWorldCorner; }
+    glm::vec2 getWorldSize() { return worldSize; }
+
 
 private:
     glm::vec2 gravity;  // Gravity force
     std::vector<GameObject> gameObjects;
     int threadCount = 1;
     int sub_steps = 8;
+    glm::vec2 upperLeftWorldCorner = {-1.0f, -1.f};
+    glm::vec2 bottomRightWorldCorner = {1.0f, 1.0f};
+    glm::vec2 worldSize = bottomRightWorldCorner - upperLeftWorldCorner ;
 
     CollisionGrid grid;
 

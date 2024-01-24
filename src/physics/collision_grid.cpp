@@ -53,15 +53,15 @@ public:
 
             const uint32_t thread_zone_size = ceil((width * height) / thread_count);
 
-            std::vector<std::thread> mythreads;
+            std::vector<std::thread> threads;
             for (int i = 0; i < thread_count; i++) {
                 uint32_t const start = i * thread_zone_size;
                 uint32_t const end = start + thread_zone_size;
-                mythreads.emplace_back(&CollisionGrid::clearGridThreded, this, start, end);
+                threads.emplace_back(&CollisionGrid::clearGridThreded, this, start, end);
             }
-            auto originalthread = mythreads.begin();
+            auto originalthread = threads.begin();
             //Do other stuff here.
-            while (originalthread != mythreads.end()) {
+            while (originalthread != threads.end()) {
                 originalthread->join();
                 originalthread++;
             }

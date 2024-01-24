@@ -82,12 +82,19 @@ void drawGrid(glm::ivec2 gridSize){
     glColor3f(0.0f, 0.0f, 0.0f);
     // Draw horizontal lines
     for (int i = 0; i <= gridHeight; ++i) {
-        glVertex2f(-1.0, 2.0 * i / gridHeight - 1.0);
-        glVertex2f(1.0, 2.0 * i / gridHeight - 1.0);
+        glVertex2f(physicsEngine.getUpperLeftWorldCorner().x, physicsEngine.getWorldSize().y * i / gridHeight - (physicsEngine.getWorldSize().y - physicsEngine.getWorldSize().y));
+        glVertex2f(physicsEngine.getBottomRightWorldCorner().x, physicsEngine.getWorldSize().y * i / gridHeight -  (physicsEngine.getWorldSize().y - physicsEngine.getWorldSize().y));
+        glVertex2f(physicsEngine.getUpperLeftWorldCorner().x, 1.0 * i / gridHeight);
+        glVertex2f(physicsEngine.getBottomRightWorldCorner().x, 1.0 * i / gridHeight);
     }
 
-    // Draw vertical lines
+
+
+//    // Draw vertical lines
     for (int i = 0; i <= gridWidth; ++i) {
+        glVertex2f(physicsEngine.getWorldSize().x * i / gridWidth - physicsEngine.getWorldSize().x / 2.f, physicsEngine.getUpperLeftWorldCorner().y);
+
+        glVertex2f(physicsEngine.getWorldSize().x * i / gridWidth - physicsEngine.getWorldSize().x / 2.f, physicsEngine.getBottomRightWorldCorner().y);
         glVertex2f(2.0 * i / gridWidth - 1.0, -1.0);
         glVertex2f(2.0 * i / gridWidth - 1.0, 1.0);
     }
@@ -277,9 +284,6 @@ void MainLoopStep()
 
     {
         ImGui::Begin("Interactive GUI panel");
-#ifdef THREADED
-        ImGui::Text("Thread pool size: %d", threadPool.size);
-#endif
 
         ImGui::SliderInt("Number of particles per source", &balls_to_add,   1, 10000);
 
@@ -363,6 +367,11 @@ void MainLoopStep()
         if(physicsEngine.getCellSize() / (2.f * particle_size) > CollisionCell::cell_capacity){
             ImGui::Text("WARNING: Cell size is too big compared to particle size, this will cause particles to be skipped");
         }
+        ImGui::End();
+
+        ImGui::Begin("Interactive GUI panel2");
+        ImGui::Text("Hello");
+
         ImGui::End();
     }
 

@@ -11,15 +11,15 @@ void PhysicsEngine::updateObjectsThreader(float dt){
         // Find collisions in two passes to avoid data races
 
         // First collision pass
-        std::vector<std::thread> mythreads;
+        std::vector<std::thread> threads;
         for (int i = 0; i < thread_count; i++) {
             uint32_t const start = i * thread_zone_size;
             uint32_t const end = start + thread_zone_size;
-            mythreads.emplace_back(&PhysicsEngine::updateObjects, this, start, end, dt);
+            threads.emplace_back(&PhysicsEngine::updateObjects, this, start, end, dt);
         }
-        auto originalthread = mythreads.begin();
+        auto originalthread = threads.begin();
         //Do other stuff here.
-        while (originalthread != mythreads.end()) {
+        while (originalthread != threads.end()) {
             originalthread->join();
             originalthread++;
         }
@@ -56,48 +56,11 @@ void PhysicsEngine::update(float dt) {
 
 
 }
-std::vector<glm::ivec2> PhysicsEngine::mapWorldToMultipleGrid(const glm::vec2& worldCoord, glm::ivec2 gridSize, float radius) {
-    std::vector<glm::ivec2> gridCoords = {};
-
-//    // Assuming world coordinates range from -1 to 1
-
-    float x = worldCoord.x;
-    float y = worldCoord.y;
-    float R = radius;
-    int gridWidth = gridSize.x;
-    int gridHeight = gridSize.y;
-
-    // create a vector to store the cells that intersect with the circle
-    int xMin = std::max(0, static_cast<int>(std::floor((x - R) * gridWidth / 2 + gridWidth / 2)));
-    int yMin = std::max(0, static_cast<int>(std::floor((y - R) * gridHeight / 2 + gridHeight / 2)));
-    int xMax = std::min(gridWidth - 1, static_cast<int>(std::floor((x + R) * gridWidth / 2 + gridWidth / 2)));
-    int yMax = std::min(gridHeight - 1, static_cast<int>(std::floor((y + R) * gridHeight / 2 + gridHeight / 2)));
-
-    if(xMin >= gridWidth){
-        xMin = gridWidth-1;
-    }
-    if(yMin >= gridHeight){
-        yMin = gridHeight-1;
-    }
-    if(xMax < 0){
-        xMax = 0;
-    }
-    if(yMax < 0){
-        yMax = 0;
-    }
-    // Add all cells in the bounding box that are fully or partially covered by the circle
-    for (int yIndex = yMin; yIndex <= yMax; ++yIndex) {
-        for (int xIndex = xMin; xIndex <= xMax; ++xIndex) {
-            gridCoords.emplace_back(xIndex, yIndex);
-        }
-    }
-    return gridCoords;
-}
 
 glm::ivec2 PhysicsEngine::mapWorldToGrid(const glm::vec2& worldCoord, glm::ivec2 gridSize) {
 
-    float normalizedX = (worldCoord.x + 1.0f) / 2.0f;
-    float normalizedY = (worldCoord.y + 1.0f) / 2.0f;
+    float normalizedX = (worldCoord.x + bottomRightWorldCorner.x) / worldSize.x;
+    float normalizedY = (worldCoord.y + bottomRightWorldCorner.y) / worldSize.y;
 
     // Mapping normalized coordinates to grid coordinates
     int gridX = static_cast<int>(normalizedX * gridSize.x);
@@ -136,15 +99,15 @@ void PhysicsEngine::positionBallsInGrid() {
          // Find collisions in two passes to avoid data races
 
          // First collision pass
-         std::vector<std::thread> mythreads;
+         std::vector<std::thread> threads;
          for (int i = 0; i < thread_count; i++) {
              uint32_t const start = i * thread_zone_size;
              uint32_t const end = start + thread_zone_size;
-             mythreads.emplace_back(&PhysicsEngine::positionBallsThreaded, this, start, end);
+             threads.emplace_back(&PhysicsEngine::positionBallsThreaded, this, start, end);
          }
-         auto originalthread = mythreads.begin();
+         auto originalthread = threads.begin();
          //Do other stuff here.
-         while (originalthread != mythreads.end()) {
+         while (originalthread != threads.end()) {
              originalthread->join();
              originalthread++;
          }
@@ -224,15 +187,15 @@ void PhysicsEngine::solveCollisions() {
 
         const uint32_t thread_zone_size = ceil((grid.width * grid.height) / thread_count);
 
-        std::vector<std::thread> mythreads;
+        std::vector<std::thread> threads;
         for (int i = 0; i < thread_count; i++) {
             uint32_t const start = i * thread_zone_size;
             uint32_t const end = start + thread_zone_size;
-            mythreads.emplace_back(&PhysicsEngine::solveCollisionThreaded, this, start, end);
+            threads.emplace_back(&PhysicsEngine::solveCollisionThreaded, this, start, end);
         }
-        auto originalthread = mythreads.begin();
+        auto originalthread = threads.begin();
         //Do other stuff here.
-        while (originalthread != mythreads.end()) {
+        while (originalthread != threads.end()) {
             originalthread->join();
             originalthread++;
         }
@@ -254,20 +217,20 @@ void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
     float damping = 0.95;
     // calulcate margin to be cell size
     // Horizontal walls
-    if (gameObject.position.x - gameObject.radius < -1.0) {
-        gameObject.position.x = -1.0 + gameObject.radius;  // Adjust position to be just outside the left wall
+    if (gameObject.position.x - gameObject.radius < upperLeftWorldCorner.x) {
+        gameObject.position.x = upperLeftWorldCorner.x + gameObject.radius;  // Adjust position to be just outside the left wall
         //gameObject.velocity.x = std::abs(gameObject.velocity.x) * damping;  // Reverse velocity on collision with the left wall
-    } else if (gameObject.position.x + gameObject.radius > 1.0) {
-        gameObject.position.x = 1.0 - gameObject.radius;  // Adjust position to be just outside the right wall
+    } else if (gameObject.position.x + gameObject.radius > bottomRightWorldCorner.x) {
+        gameObject.position.x = bottomRightWorldCorner.x - gameObject.radius;  // Adjust position to be just outside the right wall
         //gameObject.velocity.x = -std::abs(gameObject.velocity.x) * damping;  // Reverse velocity on collision with the right wall
     }
 
     // Vertical walls
-    if (gameObject.position.y - gameObject.radius < -1.0) {
-        gameObject.position.y = -1.0 + gameObject.radius;  // Adjust position to be just outside the bottom wall
+    if (gameObject.position.y - gameObject.radius < upperLeftWorldCorner.y) {
+        gameObject.position.y = upperLeftWorldCorner.y + gameObject.radius;  // Adjust position to be just outside the bottom wall
         //gameObject.velocity.y = std::abs(gameObject.velocity.y) * damping;  // Reverse velocity on collision with the bottom wall
-    } else if (gameObject.position.y + gameObject.radius > 1.0) {
-        gameObject.position.y = 1.0 - gameObject.radius;  // Adjust position to be just outside the top wall
+    } else if (gameObject.position.y + gameObject.radius > bottomRightWorldCorner.y) {
+        gameObject.position.y = bottomRightWorldCorner.y - gameObject.radius;  // Adjust position to be just outside the top wall
         //gameObject.velocity.y = -std::abs(gameObject.velocity.y) * damping;  // Reverse velocity on collision with the top wall
     }
 }
