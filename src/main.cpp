@@ -297,15 +297,15 @@ void MainLoopStep()
                     gameObject.setRadius(particle_size, cellSize);
                 }
             }
-            else{
+
                 for (auto &source: particleSources) {
                     source.radius = particle_size;
-                }
+
 
             }
         }
         ImGui::SliderInt("Particle segments", &particle_segments, 3, 50);
-        if (ImGui::SliderInt("Grid size (nxn)", &grid_size, 1, 500)){
+        if (ImGui::SliderInt("Grid size (nxn)", &grid_size, 1, 700)){
             physicsEngine.resizeGrid(grid_size, grid_size);
         }
 
