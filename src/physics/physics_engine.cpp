@@ -19,13 +19,15 @@ void PhysicsEngine::update(float dt) {
     for (uint32_t i(sub_steps); i--;) {
         positionBallsInGrid();
         solveCollisions();
+        grid.clearGrid();
         update_objects(sub_dt);
     }
 
 
 }
-std::vector<glm::vec2> PhysicsEngine::mapToWorldToGrid(const glm::vec2& worldCoord, glm::ivec2 gridSize, float radius) {
-    std::vector<glm::vec2> gridCoords = {};
+std::vector<glm::ivec2> PhysicsEngine::mapWorldToMultipleGrid(const glm::vec2& worldCoord, glm::ivec2 gridSize, float radius) {
+    std::vector<glm::ivec2> gridCoords = {};
+
 //    // Assuming world coordinates range from -1 to 1
 
     float x = worldCoord.x;
@@ -53,36 +55,48 @@ std::vector<glm::vec2> PhysicsEngine::mapToWorldToGrid(const glm::vec2& worldCoo
         yMax = 0;
     }
     // Add all cells in the bounding box that are fully or partially covered by the circle
-    std::vector<int> cellsContainingBall;
     for (int yIndex = yMin; yIndex <= yMax; ++yIndex) {
         for (int xIndex = xMin; xIndex <= xMax; ++xIndex) {
-            gridCoords.push_back({static_cast<float>(xIndex), static_cast<float>(yIndex)});
+            gridCoords.emplace_back(xIndex, yIndex);
         }
     }
     return gridCoords;
+}
+
+glm::ivec2 PhysicsEngine::mapWorldToGrid(const glm::vec2& worldCoord, glm::ivec2 gridSize) {
+
+    float normalizedX = (worldCoord.x + 1.0f) / 2.0f;
+    float normalizedY = (worldCoord.y + 1.0f) / 2.0f;
+
+    // Mapping normalized coordinates to grid coordinates
+    int gridX = static_cast<int>(normalizedX * gridSize.x);
+    int gridY = static_cast<int>(normalizedY * gridSize.y);
+
+    // Make sure the grid coordinates are within bounds
+    gridX = std::max(0, std::min(gridX, gridSize.x - 1));
+    gridY = std::max(0, std::min(gridY, gridSize.y - 1));
+
+    return {gridX, gridY};
+
 }
 
 
 void PhysicsEngine::positionBallsThreaded(int start, int end){
 
 //    uint32_t i{0};
-
+    std::vector<int> result = {};
     for(int i = start; i < end; i++) {
         GameObject& gameObject = gameObjects[i];
-        std::vector<glm::vec2> gridCoord = mapToWorldToGrid(gameObject.position, getGridSize(), gameObject.radius);
-        for (int j = 0; j < gridCoord.size(); j++) {
-            int gridIndex = grid.addObject(gridCoord[j].x, gridCoord[j].y, i);
-            gameObject.gridIndex = gridIndex;
-        }
-//        int gridIndex = grid.addObject(gridCoord.x, gridCoord.y, i);
-//        gameObject.gridIndex = gridIndex;
+        glm::ivec2 gridCoord = mapWorldToGrid(gameObject.position, getGridSize());
+        int gridIndex = grid.addObject(gridCoord.x, gridCoord.y, i);
+        result.push_back(gridIndex);
+        gameObject.gridIndex = gridIndex;
+
     }
 }
-
 void PhysicsEngine::positionBallsInGrid() {
 
     grid.clearGrid();
-
     const uint32_t  thread_count = threadCount;
 
     const uint32_t thread_zone_size = gameObjects.size() / thread_count;
@@ -105,12 +119,12 @@ void PhysicsEngine::positionBallsInGrid() {
     if(gameObjects.size() % thread_count != 0) {
         positionBallsThreaded(gameObjects.size() - (gameObjects.size() % thread_count), gameObjects.size());
     }
+   //return positionBallsThreaded(0, gameObjects.size());
 }
 
 void PhysicsEngine::checkAtomCellCollisions(uint32_t atom_idx, const CollisionCell& c)
 {
     for (uint32_t i{0}; i < c.objects_count; ++i) {
-        //resolveCollisionsWithBalls(atom_idx, c.objects[i]);
         solveContact(atom_idx, c.objects[i]);
     }
 }
@@ -223,6 +237,7 @@ void PhysicsEngine::solveCollisions() {
     if(grid.width * grid.height % thread_count != 0) {
         solveCollisionThreaded(grid.width * grid.height - (grid.width * grid.height % thread_count), grid.width * grid.height);
     }
+//    solveCollisionThreaded(0, grid.width * grid.height);
 
 }
 

@@ -19,7 +19,7 @@ int particle_counter = 0;
 float particle_velocity_x = -50.f;
 float particle_velocity_y = 50.f;
 int particle_time_delta = 2;
-float particle_size = 0.005;
+float particle_size = 0.003;
 int particle_segments = 10;
 int balls_to_add = 2000;
 
@@ -333,7 +333,7 @@ void MainLoopStep()
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         glm::vec2 mouseWorldPos = glm::vec2{io.MousePos.x / width * 2.0f - 1.0f, io.MousePos.y / height * 2.0f - 1.0f};
-        glm::vec2 mousePosGrid = physicsEngine.mapToWorldToGrid(mouseWorldPos, physicsEngine.getGridSize(), 0.001)[0];
+        glm::vec2 mousePosGrid = physicsEngine.mapWorldToGrid(mouseWorldPos, physicsEngine.getGridSize());
         ImGui::Text("Mouse position x= %.3f y= %.3f, Grid coordinates x=%d, y=%d (index = %d)", mouseWorldPos.x, mouseWorldPos.y, (int)mousePosGrid.x, (int)mousePosGrid.y, (int)(mousePosGrid.x * physicsEngine.getGrid().height + mousePosGrid.y));
 
         ImGui::Text("Ration cell size to particle size: %.3f and cell capacity is %d", physicsEngine.getCellSize() / particle_size, CollisionCell::cell_capacity);

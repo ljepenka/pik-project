@@ -29,7 +29,3 @@ public:
         acceleration = {0.0f, 0.0f};
     }
 };
-
-struct Rectangle {
-    glm::vec2 leftPos, rightPos;
-};

@@ -24,7 +24,8 @@ public:
     CollisionGrid& getGrid() { return grid; }
     glm::ivec2 getGridSize() { return glm::ivec2(grid.width, grid.height); }
 //    glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize);
-    std::vector<glm::vec2> mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize, float radius);
+    std::vector<glm::ivec2> mapWorldToMultipleGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize, float radius);
+    glm::ivec2 mapWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize);
 
     float getCellSize() {return 2.0f / grid.height; }
     void setThreadCount(int threadCount) { this->threadCount = threadCount; }
