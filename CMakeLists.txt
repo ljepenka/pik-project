@@ -39,7 +39,6 @@ set(SOURCE_FILES
         src/physics/physics_engine.cpp
         src/common/grid.cpp
         src/physics/collision_grid.cpp
-        src/thread_pool/thread_pool.cpp
 )
 
 

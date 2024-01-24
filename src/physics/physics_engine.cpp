@@ -273,31 +273,6 @@ void PhysicsEngine::resolveCollisionsWithWalls(GameObject& gameObject) {
 }
 
 
-void PhysicsEngine::resolveCollisionsWithBalls(uint32_t gameObjectId, uint32_t otherBallId) {
-
-    constexpr float restitution_coefficient = 0.7f;
-    if (gameObjectId == otherBallId) {
-        return;
-    }
-    GameObject& obj1 = gameObjects[gameObjectId];
-    GameObject& obj2 = gameObjects[otherBallId];
-    glm::vec2 relDist = obj1.position - obj2.position;
-    float distance2  =  relDist.x * relDist.x + relDist.y * relDist.y;
-    float r1 = obj1.radius;
-    float r2 = obj2.radius;
-    // Check if the objects are overlapping
-    if (distance2 < (r1 + r2)*(r1 + r2)  ) {
-        float distance = sqrt(distance2);
-        obj1.collided = true;
-        obj2.collided = true;
-        const float delta  = 1.0f * 0.5f * (obj2.radius+ obj1.radius - distance);
-        const glm::vec2 col_vec = (relDist / distance) * delta;
-        obj1.position += col_vec;
-        obj2.position -= col_vec;
-
-    }
-}
-
 void PhysicsEngine::resizeGrid(int32_t width, int32_t height) {
     grid.resize(width, height);
     for(auto& gameObject: gameObjects) {

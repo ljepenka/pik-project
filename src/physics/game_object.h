@@ -3,11 +3,8 @@
 
 class GameObject {
 public:
-//    float x{}, y{};      // Position
     glm::vec2 position;
     glm::vec2 last_position = {0.0f, 0.0f};
-//    float vx{}, vy{};    // Velocity
-   // glm::vec2 velocity;
     glm::vec2 acceleration = {0.0f, 0.0f};
 
     float radius{};    // Radius

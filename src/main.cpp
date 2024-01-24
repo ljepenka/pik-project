@@ -16,10 +16,10 @@ GLuint window;
 GLuint width = 1000, height = 1000;
 
 int particle_counter = 0;
-float particle_velocity_x = -50.f;
+float particle_velocity_x = 50.f;
 float particle_velocity_y = 50.f;
 int particle_time_delta = 2;
-float particle_size = 0.004;
+float particle_size = 0.01;
 int particle_segments = 10;
 int balls_to_add = 2000;
 
@@ -46,22 +46,22 @@ struct ParticleSource{
 };
 
 std::vector<ParticleSource> particleSources = {
-        ParticleSource{glm::vec2(-0.5, -0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.0, 0.0), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.5, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size , balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(-0.6, -0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size , balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.1, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.2, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.3, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.4, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.5, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.6 ,0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.7, 0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.8, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.3, 0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.4, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.5, 0.4), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-        ParticleSource{glm::vec2(0.6 ,0.5), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(-0.5, -0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.0, 0.0), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size * 1.1f, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.5, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size * 1.2f, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(-0.6, -0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size * 1.4f, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.1, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size * 1.5f, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.2, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size * 1.5f, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.3, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size * , balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.4, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.5, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.6 ,0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.7, 0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.8, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.3, 0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.4, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.5, 0.4), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+//        ParticleSource{glm::vec2(0.6 ,0.5), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
 };
 
 void MainLoopStep();
@@ -241,6 +241,15 @@ int main(int argc, char** argv) {
     for(auto &source: particleSources){
         source.active = true;
     }
+    for(int j = 0; j < 3; j++) {
+        for (int i = 0; i < 20; i++) {
+                float x_pos = -0.9f + i * (1.8f / 20);
+                float y_pos = 0.7 + (j * 0.1);
+                particleSources.push_back(
+                        ParticleSource{glm::vec2(x_pos, y_pos), glm::vec2(particle_velocity_x, particle_velocity_y),
+                                       particle_size, balls_to_add, particle_time_delta, false});
+            }
+    }
     glutMainLoop();
 
 
@@ -276,22 +285,31 @@ void MainLoopStep()
 
         ImGui::Separator();
 
-        ImGui::SliderFloat("Particle velocity x", &particle_velocity_x, -0.1, 0.1);
-        ImGui::SliderFloat("Particle velocity y", &particle_velocity_y, -0.1, 0.1);
+        ImGui::SliderFloat("Particle source velocity x", &particle_velocity_x, -500, 500);
+        ImGui::SliderFloat("Particle source velocity y", &particle_velocity_y, -500, 500);
         float cellSize = physicsEngine.getCellSize();
-        if(ImGui::SliderFloat("Particle size", &particle_size, 0.001, 0.02)){
+        if(ImGui::SliderFloat("Particle size", &particle_size, 0.003, 0.05)){
             if(global_particle_size) {
                 for (auto &gameObject: physicsEngine.getGameObjects()) {
+                    if (gameObject.radius < particle_size) {
+                        continue;
+                    }
                     gameObject.setRadius(particle_size, cellSize);
                 }
             }
+            else{
+                for (auto &source: particleSources) {
+                    source.radius = particle_size;
+                }
+
+            }
         }
-        ImGui::SliderInt("Particle segments", &particle_segments, 3, 365);
+        ImGui::SliderInt("Particle segments", &particle_segments, 3, 50);
         if (ImGui::SliderInt("Grid size (nxn)", &grid_size, 1, 500)){
             physicsEngine.resizeGrid(grid_size, grid_size);
         }
 
-        if (ImGui::SliderInt("Thread count", &thread_count, 1, 12)){
+        if (ImGui::SliderInt("Thread count", &thread_count, 1, 16)){
             physicsEngine.setThreadCount(thread_count);
         }
         if (ImGui::SliderInt("Physics substeps", &physics_step, 1, 32)){
@@ -306,6 +324,7 @@ void MainLoopStep()
         if(ImGui::Button("Start Particle Sources")){
             for(auto &source: particleSources){
                 source.active = true;
+                source.number_of_balls = balls_to_add;
             }
         }
         if(ImGui::Button("Stop Particle Sources")){
@@ -354,8 +373,7 @@ void MainLoopStep()
     glViewport(0, 0, (GLsizei)io.DisplaySize.x, (GLsizei)io.DisplaySize.y);
     glClearColor(0.5f, 0.5f, 0.5f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
-    float dt = 1.0f / io.Framerate;
-    dt = 1.0f / 60.f;
+    float dt = 1.0f / 60.f;
     physicsEngine.update(dt);
 
     display();
@@ -365,10 +383,5 @@ void MainLoopStep()
 
     glutSwapBuffers();
 
-//    auto end_time = std::chrono::high_resolution_clock::now();
-//
-//    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-//    auto fps = 1000.0f / duration.count();
-//    std::cout << "Time taken by rendering: " << duration.count() << " millisecondsa" << std::endl;
 
 }

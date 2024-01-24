@@ -1,11 +1,7 @@
 #include <vector>
 #include "game_object.h"
 #include "collision_grid.cpp"
-#include "../thread_pool/thread_pool.cpp"
 #include <glm/glm.hpp>
-#include "point.h"
-
-// #define THREADED
 
 class PhysicsEngine {
 public:
@@ -23,13 +19,11 @@ public:
     std::vector<GameObject>& getGameObjects() { return gameObjects; }
     CollisionGrid& getGrid() { return grid; }
     glm::ivec2 getGridSize() { return glm::ivec2(grid.width, grid.height); }
-//    glm::vec2 mapToWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize);
     std::vector<glm::ivec2> mapWorldToMultipleGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize, float radius);
     glm::ivec2 mapWorldToGrid(const glm::vec2 &worldCoord, glm::ivec2 gridSize);
 
     float getCellSize() {return 2.0f / grid.height; }
     void setThreadCount(int threadCount) { this->threadCount = threadCount; }
-    void update_objects(float dt);
     void update(float dt);
     void setSubSteps(int sub_steps) { this->sub_steps = sub_steps; }
 
@@ -55,8 +49,6 @@ private:
     void checkAtomCellCollisions(uint32_t atom_idx, const CollisionCell& c);
 
     void resolveCollisionsWithWalls(GameObject &gameObject);
-
-    void resolveCollisionsWithBalls(uint32_t gameObject, uint32_t other);
 
     void positionBallsThreaded(int start, int end);
 
