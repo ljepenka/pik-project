@@ -19,7 +19,7 @@ int particle_counter = 0;
 float particle_velocity_x = -50.f;
 float particle_velocity_y = 50.f;
 int particle_time_delta = 2;
-float particle_size = 0.003;
+float particle_size = 0.004;
 int particle_segments = 10;
 int balls_to_add = 2000;
 
@@ -27,10 +27,10 @@ bool showGrid = false;
 bool showBallColor = false;
 bool global_particle_size = false;
 bool renderGameObjects = true;
-float gravity_y = 2.0f;
+float gravity_y = 0.5f;
 
 glm::vec2 gravity = glm::vec2(0.0, -gravity_y);
-int grid_size = 300;
+int grid_size = 250;
 int thread_count = 1;
 int physics_step = 8;
 
@@ -53,15 +53,15 @@ std::vector<ParticleSource> particleSources = {
         ParticleSource{glm::vec2(0.1, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
         ParticleSource{glm::vec2(0.2, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
         ParticleSource{glm::vec2(0.3, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-//        ParticleSource{glm::vec2(0.4, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-//        ParticleSource{glm::vec2(0.5, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-//        ParticleSource{glm::vec2(0.6 ,0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-//        ParticleSource{glm::vec2(0.7, 0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-//        ParticleSource{glm::vec2(0.8, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-//        ParticleSource{glm::vec2(0.3, 0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-//        ParticleSource{glm::vec2(0.4, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-//        ParticleSource{glm::vec2(0.5, 0.4), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
-//        ParticleSource{glm::vec2(0.6 ,0.5), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.4, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.5, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.6 ,0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.7, 0.1), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.8, 0.1), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.3, 0.2), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.4, 0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.5, 0.4), glm::vec2(particle_velocity_x, -particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
+        ParticleSource{glm::vec2(0.6 ,0.5), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
 };
 
 void MainLoopStep();
@@ -118,18 +118,18 @@ void drawCircle(glm::vec2 position, float radius, int num_segments, glm::vec3 co
         glVertex2f(x + position.x, y + position.y);
     }
     glEnd();
-    if (collided) {
-        glBegin(GL_LINE_LOOP);
-
-        for (int i = 0; i < num_segments; i++) {
-            float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);
-            float x = radius * cosf(theta);
-            float y = radius * sinf(theta);
-            glColor3f(0.f, 0.f, 0.f);
-            glVertex2f(x + position.x, y + position.y);
-        }
-        glEnd();
-    }
+//    if (collided) {
+//        glBegin(GL_LINE_LOOP);
+//
+//        for (int i = 0; i < num_segments; i++) {
+//            float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);
+//            float x = radius * cosf(theta);
+//            float y = radius * sinf(theta);
+//            glColor3f(0.f, 0.f, 0.f);
+//            glVertex2f(x + position.x, y + position.y);
+//        }
+//        glEnd();
+//    }
 }
 
 // Display callback function
@@ -200,7 +200,9 @@ void timer(int) {
                     float red = 0.0, green = 0.0, blue = 0.0;
                     getColor(particle_counter, red, green, blue);
                     glm::vec3 color = glm::vec3(red, green, blue);
-                    physicsEngine.addGameObject(GameObject{source.position, source.position, {particle_velocity_x, particle_velocity_y}, source.radius, 100*source.radius, color});
+                    GameObject gameObject = GameObject{particlePosition, particlePosition, {particle_velocity_x, particle_velocity_y}, source.radius, 100*source.radius, color};
+                    gameObject.setRadius(source.radius, physicsEngine.getCellSize());
+                    physicsEngine.addGameObject(gameObject);
                     source.number_of_balls--;
                     particle_counter++;
                 }
@@ -270,16 +272,17 @@ void MainLoopStep()
         ImGui::Text("Thread pool size: %d", threadPool.size);
 #endif
 
-        ImGui::SliderInt("Number of particles per source", &balls_to_add, 0, 10000);
+        ImGui::SliderInt("Number of particles per source", &balls_to_add,   1, 10000);
 
         ImGui::Separator();
 
         ImGui::SliderFloat("Particle velocity x", &particle_velocity_x, -0.1, 0.1);
         ImGui::SliderFloat("Particle velocity y", &particle_velocity_y, -0.1, 0.1);
+        float cellSize = physicsEngine.getCellSize();
         if(ImGui::SliderFloat("Particle size", &particle_size, 0.001, 0.02)){
             if(global_particle_size) {
                 for (auto &gameObject: physicsEngine.getGameObjects()) {
-                    gameObject.radius = particle_size;
+                    gameObject.setRadius(particle_size, cellSize);
                 }
             }
         }
@@ -295,7 +298,7 @@ void MainLoopStep()
             physicsEngine.setSubSteps(physics_step);
         }
 
-        if (ImGui::SliderFloat("Gravity slider", &gravity_y, 0, 20)){
+        if (ImGui::SliderFloat("Gravity slider", &gravity_y, -0.5, 0.5)){
             physicsEngine.setGravity(glm::vec2(0.0, -gravity_y));
         }
 
@@ -323,6 +326,7 @@ void MainLoopStep()
         ImGui::Checkbox("Change global particle size", &global_particle_size);
 
 
+
         ImGui::Text("Number of particles: %d", particle_counter);
         ImGui::Text("Number of cells: %d", grid_size*grid_size);
 
@@ -336,8 +340,8 @@ void MainLoopStep()
         glm::vec2 mousePosGrid = physicsEngine.mapWorldToGrid(mouseWorldPos, physicsEngine.getGridSize());
         ImGui::Text("Mouse position x= %.3f y= %.3f, Grid coordinates x=%d, y=%d (index = %d)", mouseWorldPos.x, mouseWorldPos.y, (int)mousePosGrid.x, (int)mousePosGrid.y, (int)(mousePosGrid.x * physicsEngine.getGrid().height + mousePosGrid.y));
 
-        ImGui::Text("Ration cell size to particle size: %.3f and cell capacity is %d", physicsEngine.getCellSize() / particle_size, CollisionCell::cell_capacity);
-        if(physicsEngine.getCellSize() / particle_size > CollisionCell::cell_capacity){
+        ImGui::Text("Ration cell size to particle size: %.3f and cell capacity is %d", physicsEngine.getCellSize() / (2.f * particle_size), CollisionCell::cell_capacity);
+        if(physicsEngine.getCellSize() / (2.f * particle_size) > CollisionCell::cell_capacity){
             ImGui::Text("WARNING: Cell size is too big compared to particle size, this will cause particles to be skipped");
         }
         ImGui::End();
@@ -351,6 +355,7 @@ void MainLoopStep()
     glClearColor(0.5f, 0.5f, 0.5f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
     float dt = 1.0f / io.Framerate;
+    dt = 1.0f / 60.f;
     physicsEngine.update(dt);
 
     display();

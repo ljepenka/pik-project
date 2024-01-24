@@ -15,6 +15,8 @@ public:
     glm::vec3 color = glm::vec3(0.0, 0.0, 0.0);
     int gridIndex = 0;
     bool collided = false;
+    float cellSizeRatio = 0.0f;
+
 
 
     void update(float dt)
@@ -27,5 +29,10 @@ public:
         last_position           = position;
         position                = new_position;
         acceleration = {0.0f, 0.0f};
+    }
+
+    void setRadius(float radius, float cellSize){
+        this->radius = radius;
+        this->cellSizeRatio = 2 * radius / cellSize;
     }
 };

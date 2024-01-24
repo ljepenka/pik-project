@@ -2,9 +2,40 @@
 #include <glm/vec2.hpp>
 #include "physics_engine.h"
 
-void PhysicsEngine::update_objects(float dt) {
 
-    for (auto &gameObject: gameObjects) {
+void PhysicsEngine::updateObjectsThreader(float dt){
+    if(threadCount > 1) {
+        const uint32_t thread_count = threadCount;
+
+        const uint32_t thread_zone_size = gameObjects.size() / thread_count;
+        // Find collisions in two passes to avoid data races
+
+        // First collision pass
+        std::vector<std::thread> mythreads;
+        for (int i = 0; i < thread_count; i++) {
+            uint32_t const start = i * thread_zone_size;
+            uint32_t const end = start + thread_zone_size;
+            mythreads.emplace_back(&PhysicsEngine::updateObjects, this, start, end, dt);
+        }
+        auto originalthread = mythreads.begin();
+        //Do other stuff here.
+        while (originalthread != mythreads.end()) {
+            originalthread->join();
+            originalthread++;
+        }
+        if (gameObjects.size() % thread_count != 0) {
+            updateObjects(gameObjects.size() - (gameObjects.size() % thread_count), gameObjects.size(), dt);
+        }
+    }
+    else{
+        updateObjects(0, gameObjects.size(), dt);
+    }
+
+}
+void PhysicsEngine::updateObjects(int start, int end, float dt) {
+
+    for (int i = start; i < end; i++) {
+        GameObject& gameObject = gameObjects[i];
         gameObject.acceleration += gravity;
         gameObject.update(dt);
         resolveCollisionsWithWalls(gameObject);
@@ -19,8 +50,8 @@ void PhysicsEngine::update(float dt) {
     for (uint32_t i(sub_steps); i--;) {
         positionBallsInGrid();
         solveCollisions();
-        grid.clearGrid();
-        update_objects(sub_dt);
+//        grid.clearGrid();
+        updateObjectsThreader(sub_dt);
     }
 
 
@@ -84,42 +115,46 @@ glm::ivec2 PhysicsEngine::mapWorldToGrid(const glm::vec2& worldCoord, glm::ivec2
 void PhysicsEngine::positionBallsThreaded(int start, int end){
 
 //    uint32_t i{0};
-    std::vector<int> result = {};
+//    std::vector<int> result = {};
     for(int i = start; i < end; i++) {
         GameObject& gameObject = gameObjects[i];
         glm::ivec2 gridCoord = mapWorldToGrid(gameObject.position, getGridSize());
-        int gridIndex = grid.addObject(gridCoord.x, gridCoord.y, i);
-        result.push_back(gridIndex);
+//        if(cells_to_big){}
+        int gridIndex = grid.addObject(gridCoord.x, gridCoord.y, i, gameObject.cellSizeRatio);
+//        result.push_back(gridIndex);
         gameObject.gridIndex = gridIndex;
 
     }
 }
 void PhysicsEngine::positionBallsInGrid() {
 
-    grid.clearGrid();
-    const uint32_t  thread_count = threadCount;
+     grid.clearGrid(threadCount);
+     if(threadCount > 1) {
+         const uint32_t thread_count = threadCount;
 
-    const uint32_t thread_zone_size = gameObjects.size() / thread_count;
-    // Find collisions in two passes to avoid data races
+         const uint32_t thread_zone_size = gameObjects.size() / thread_count;
+         // Find collisions in two passes to avoid data races
 
-    // First collision pass
-    std::vector<std::thread> mythreads;
-    for (int i = 0; i < thread_count; i++)
-    {
-        uint32_t const start = i * thread_zone_size;
-        uint32_t const end = start + thread_zone_size;
-        mythreads.emplace_back(&PhysicsEngine::positionBallsThreaded, this, start, end);
-    }
-    auto originalthread = mythreads.begin();
-    //Do other stuff here.
-    while (originalthread != mythreads.end()) {
-        originalthread->join();
-        originalthread++;
-    }
-    if(gameObjects.size() % thread_count != 0) {
-        positionBallsThreaded(gameObjects.size() - (gameObjects.size() % thread_count), gameObjects.size());
-    }
-   //return positionBallsThreaded(0, gameObjects.size());
+         // First collision pass
+         std::vector<std::thread> mythreads;
+         for (int i = 0; i < thread_count; i++) {
+             uint32_t const start = i * thread_zone_size;
+             uint32_t const end = start + thread_zone_size;
+             mythreads.emplace_back(&PhysicsEngine::positionBallsThreaded, this, start, end);
+         }
+         auto originalthread = mythreads.begin();
+         //Do other stuff here.
+         while (originalthread != mythreads.end()) {
+             originalthread->join();
+             originalthread++;
+         }
+         if (gameObjects.size() % thread_count != 0) {
+             positionBallsThreaded(gameObjects.size() - (gameObjects.size() % thread_count), gameObjects.size());
+         }
+     }
+     else {
+         positionBallsThreaded(0, gameObjects.size());
+     }
 }
 
 void PhysicsEngine::checkAtomCellCollisions(uint32_t atom_idx, const CollisionCell& c)
@@ -139,47 +174,15 @@ void PhysicsEngine::processCell(const CollisionCell& c, uint32_t index)
         const uint32_t atom_idx = c.objects[i];
         int indexToCheck = index;
 
-        checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
-
-        indexToCheck = index - 1;
-        if (checkIndex(indexToCheck, grid.width, grid.height)) {
-            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
-        }
-
-
-        indexToCheck = index + 1;
-        if (checkIndex(indexToCheck, grid.width, grid.height)) {
-            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
-        }
-
-        indexToCheck = index + grid.height - 1;
-        if (checkIndex(indexToCheck, grid.width, grid.height)) {
-            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
-        }
-
-        indexToCheck = index + grid.height;
-        if (checkIndex(indexToCheck, grid.width, grid.height)) {
-            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
-        }
-
-        indexToCheck = index + grid.height + 1;
-        if (checkIndex(indexToCheck, grid.width, grid.height)) {
-            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
-        }
-
-        indexToCheck = index - grid.height - 1;
-        if (checkIndex(indexToCheck, grid.width, grid.height)) {
-            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
-        }
-
-        indexToCheck = index - grid.height;
-        if (checkIndex(indexToCheck, grid.width, grid.height)) {
-            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
-        }
-
-        indexToCheck = index - grid.height + 1;
-        if (checkIndex(indexToCheck, grid.width, grid.height)) {
-            checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+//        checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+        int cellMultiplier = ceil(c.maxRadiusRatio);
+        for(int j = -cellMultiplier; j < 2*cellMultiplier; j++){
+            for(int k = -cellMultiplier * grid.height; k < cellMultiplier * grid.height; k+=grid.height){
+                indexToCheck = index + j + k;
+                if (checkIndex(indexToCheck, grid.width, grid.height)) {
+                    checkAtomCellCollisions(atom_idx, grid.gridData[indexToCheck]);
+                }
+            }
         }
 
     }
@@ -216,28 +219,31 @@ void PhysicsEngine::solveContact(uint32_t atom_1_idx, uint32_t atom_2_idx)
 
 
 void PhysicsEngine::solveCollisions() {
+    if(threadCount > 1 ) {
+        const uint32_t thread_count = threadCount;
 
-    const uint32_t  thread_count = threadCount;
+        const uint32_t thread_zone_size = ceil((grid.width * grid.height) / thread_count);
 
-    const uint32_t thread_zone_size = ceil((grid.width * grid.height) / thread_count);
-
-    std::vector<std::thread> mythreads;
-    for (int i = 0; i < thread_count; i++)
-    {
-        uint32_t const start = i * thread_zone_size;
-        uint32_t const end = start + thread_zone_size;
-        mythreads.emplace_back(&PhysicsEngine::solveCollisionThreaded, this, start, end);
+        std::vector<std::thread> mythreads;
+        for (int i = 0; i < thread_count; i++) {
+            uint32_t const start = i * thread_zone_size;
+            uint32_t const end = start + thread_zone_size;
+            mythreads.emplace_back(&PhysicsEngine::solveCollisionThreaded, this, start, end);
+        }
+        auto originalthread = mythreads.begin();
+        //Do other stuff here.
+        while (originalthread != mythreads.end()) {
+            originalthread->join();
+            originalthread++;
+        }
+        if (grid.width * grid.height % thread_count != 0) {
+            solveCollisionThreaded(grid.width * grid.height - (grid.width * grid.height % thread_count),
+                                   grid.width * grid.height);
+        }
     }
-    auto originalthread = mythreads.begin();
-    //Do other stuff here.
-    while (originalthread != mythreads.end()) {
-        originalthread->join();
-        originalthread++;
+    else {
+        solveCollisionThreaded(0, grid.width * grid.height);
     }
-    if(grid.width * grid.height % thread_count != 0) {
-        solveCollisionThreaded(grid.width * grid.height - (grid.width * grid.height % thread_count), grid.width * grid.height);
-    }
-//    solveCollisionThreaded(0, grid.width * grid.height);
 
 }
 
@@ -290,5 +296,13 @@ void PhysicsEngine::resolveCollisionsWithBalls(uint32_t gameObjectId, uint32_t o
         obj2.position -= col_vec;
 
     }
+}
+
+void PhysicsEngine::resizeGrid(int32_t width, int32_t height) {
+    grid.resize(width, height);
+    for(auto& gameObject: gameObjects) {
+       gameObject.setRadius(gameObject.radius, getCellSize());
+    }
+
 }
 

@@ -19,7 +19,7 @@ public:
     void update();
     void setGameObjects(std::vector<GameObject> gameObjects) { this->gameObjects = gameObjects; }
     void addGameObject(GameObject gameObject) { gameObjects.push_back(gameObject); }
-    void resizeGrid(int32_t width, int32_t height) { grid.resize(width, height); }
+    void resizeGrid(int32_t width, int32_t height);
     std::vector<GameObject>& getGameObjects() { return gameObjects; }
     CollisionGrid& getGrid() { return grid; }
     glm::ivec2 getGridSize() { return glm::ivec2(grid.width, grid.height); }
@@ -63,6 +63,9 @@ private:
 
     void solveContact(uint32_t atom_1_idx, uint32_t atom_2_idx);
 
+    void updateObjectsThreader(float dt);
+
+    void updateObjects(int start, int end, float dt);
 };
 
 
