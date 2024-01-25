@@ -92,3 +92,6 @@ _deps
 project
 **/bin
 build
+venv
+results.txt
+graphs

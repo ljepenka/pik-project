@@ -7,10 +7,10 @@
 #include "physics/physics_engine.h"
 #include "imgui_internal.h"
 #include <glm/glm.hpp>
+#include <fstream>
 
-// #define THREADED
 
-
+bool DEBUG_LOGS = false;
 
 GLuint window;
 GLuint width = 1000, height = 1000;
@@ -34,6 +34,9 @@ int grid_size = 250;
 int thread_count = 1;
 int physics_step = 8;
 
+
+std::ofstream outputFile;
+
 glm::vec2 lastSourcePosition = glm::vec2(0.0, 0.0);
 struct ParticleSource{
     glm::vec2 position;
@@ -44,6 +47,8 @@ struct ParticleSource{
     bool active = false;
     int particle_add_counter = 0;
 };
+
+
 
 std::vector<ParticleSource> particleSources = {
 //        ParticleSource{glm::vec2(-0.5, -0.3), glm::vec2(particle_velocity_x, particle_velocity_y), particle_size, balls_to_add, particle_time_delta, false},
@@ -106,7 +111,7 @@ void getColor(int index, float& red, float& green, float& blue) {
 
 
 
-void drawCircle(glm::vec2 position, float radius, int num_segments, glm::vec3 color, bool collided = false) {
+void drawCircle(glm::vec2 position, float radius, int num_segments, glm::vec3 color) {
 
 
     glBegin(GL_TRIANGLE_FAN );
@@ -118,18 +123,6 @@ void drawCircle(glm::vec2 position, float radius, int num_segments, glm::vec3 co
         glVertex2f(x + position.x, y + position.y);
     }
     glEnd();
-//    if (collided) {
-//        glBegin(GL_LINE_LOOP);
-//
-//        for (int i = 0; i < num_segments; i++) {
-//            float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);
-//            float x = radius * cosf(theta);
-//            float y = radius * sinf(theta);
-//            glColor3f(0.f, 0.f, 0.f);
-//            glVertex2f(x + position.x, y + position.y);
-//        }
-//        glEnd();
-//    }
 }
 
 // Display callback function
@@ -154,10 +147,8 @@ void display() {
         }
         GameObject& gameObject = gameObjects[i];
         if(renderGameObjects) {
-            drawCircle(gameObject.position, gameObject.radius, particle_segments, color, gameObject.collided);
+            drawCircle(gameObject.position, gameObject.radius, particle_segments, color);
         }
-        gameObject.collided = false;
-
     }
 
 
@@ -209,7 +200,6 @@ void timer(int) {
                 source.particle_add_counter++;
             }
         }
-
 }
 
 int main(int argc, char** argv) {
@@ -222,8 +212,15 @@ int main(int argc, char** argv) {
     glutTimerFunc(0, timer, 0);
     glClearColor(0.0, 0.0, 0.0, 1.0);  // Black background
     gluOrtho2D(-1.0, 1.0, -1.0, 1.0);  // Set the coordinate system
-//    initializeBalls(10, 0, 1.0, 100, 0.1 );
     physicsEngine.setGameObjects(balls);
+    outputFile.open("../results.txt");
+
+
+    // Check if the file is successfully opened
+    if (!outputFile.is_open()) {
+        std::cerr << "Error opening the file!" << std::endl;
+        return 1; // Return an error code
+    }
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -257,6 +254,8 @@ int main(int argc, char** argv) {
     ImGui_ImplOpenGL2_Shutdown();
     ImGui_ImplGLUT_Shutdown();
     ImGui::DestroyContext();
+    outputFile.close();
+
     return 0;
 }
 
@@ -264,7 +263,6 @@ void MainLoopStep()
 
 {
 
-   // auto start_time = std::chrono::high_resolution_clock::now();
 
 
     // Start the Dear ImGui frame
@@ -277,10 +275,6 @@ void MainLoopStep()
 
     {
         ImGui::Begin("Interactive GUI panel");
-#ifdef THREADED
-        ImGui::Text("Thread pool size: %d", threadPool.size);
-#endif
-
         ImGui::SliderInt("Number of particles per source", &balls_to_add,   1, 10000);
 
         ImGui::Separator();
@@ -360,14 +354,15 @@ void MainLoopStep()
         ImGui::Text("Mouse position x= %.3f y= %.3f, Grid coordinates x=%d, y=%d (index = %d)", mouseWorldPos.x, mouseWorldPos.y, (int)mousePosGrid.x, (int)mousePosGrid.y, (int)(mousePosGrid.x * physicsEngine.getGrid().height + mousePosGrid.y));
 
         ImGui::Text("Ration cell size to particle size: %.3f and cell capacity is %d", physicsEngine.getCellSize() / (2.f * particle_size), CollisionCell::cell_capacity);
-        if(physicsEngine.getCellSize() / (2.f * particle_size) > CollisionCell::cell_capacity){
+        if((physicsEngine.getCellSize() / (2.f * particle_size)) * (physicsEngine.getCellSize() / (2.f * particle_size)) > CollisionCell::cell_capacity){
             ImGui::Text("WARNING: Cell size is too big compared to particle size, this will cause particles to be skipped");
         }
+        ImGui::Text("Number of collisions: %d, number of tested particles: %d (%f)", physicsEngine.getCollisionCount(), physicsEngine.getCollisionTestCount(), (float)physicsEngine.getCollisionCount() / (float)physicsEngine.getCollisionTestCount());
         ImGui::End();
     }
 
 
-
+    outputFile << "FPS:" <<io.Framerate << ";GRID_SIZE:" << physicsEngine.getGridSize().x <<";PARTICLE_COUNTER:" << particle_counter << ";COLLISION_COUNT:"<< physicsEngine.getCollisionCount() << ";COLLISION_TEST_COUNT:" << physicsEngine.getCollisionTestCount() << ";THREAD_COUNT:"<< thread_count<< std::endl;
     // Rendering
     ImGui::Render();
     glViewport(0, 0, (GLsizei)io.DisplaySize.x, (GLsizei)io.DisplaySize.y);

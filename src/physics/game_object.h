@@ -11,7 +11,8 @@ public:
     float mass = 1.0;
     glm::vec3 color = glm::vec3(0.0, 0.0, 0.0);
     int gridIndex = 0;
-    bool collided = false;
+    int numberOfCollision = 0;
+    int numberOfTestsForCollision = 0;
     float cellSizeRatio = 0.0f;
 
 

@@ -39,7 +39,8 @@ void PhysicsEngine::updateObjects(int start, int end, float dt) {
         gameObject.acceleration += gravity;
         gameObject.update(dt);
         resolveCollisionsWithWalls(gameObject);
-
+        collisionCount += gameObject.numberOfCollision;
+        collisionTestCount += gameObject.numberOfTestsForCollision;
     }
 
 }
@@ -75,9 +76,12 @@ glm::ivec2 PhysicsEngine::mapWorldToGrid(const glm::vec2& worldCoord, glm::ivec2
 
 
 void PhysicsEngine::positionBallsThreaded(int start, int end){
-
+    collisionTestCount = 0;
+    collisionCount = 0;
     for(int i = start; i < end; i++) {
         GameObject& gameObject = gameObjects[i];
+        gameObject.numberOfCollision = 0;
+        gameObject.numberOfTestsForCollision = 0;
         glm::ivec2 gridCoord = mapWorldToGrid(gameObject.position, getGridSize());
         int gridIndex = grid.addObject(gridCoord.x, gridCoord.y, i, gameObject.cellSizeRatio);
         gameObject.gridIndex = gridIndex;
@@ -160,6 +164,8 @@ void PhysicsEngine::solveContact(uint32_t atom_1_idx, uint32_t atom_2_idx)
     constexpr float eps           = 0.00001f;
     GameObject& obj_1 = gameObjects[atom_1_idx];
     GameObject& obj_2 = gameObjects[atom_2_idx];
+    obj_1.numberOfTestsForCollision++;
+    obj_2.numberOfTestsForCollision++;
     const glm::vec2 o2_o1  = obj_1.position - obj_2.position;
     const float dist2 = o2_o1.x * o2_o1.x + o2_o1.y * o2_o1.y;
     if (dist2 < (obj_1.radius + obj_2.radius) * (obj_1.radius + obj_2.radius) && dist2 > eps ) {
@@ -169,6 +175,8 @@ void PhysicsEngine::solveContact(uint32_t atom_1_idx, uint32_t atom_2_idx)
         const glm::vec2 col_vec = (o2_o1 / dist) * delta;
         obj_1.position += col_vec;
         obj_2.position -= col_vec;
+        obj_1.numberOfCollision++;
+        obj_2.numberOfCollision++;
     }
 }
 
@@ -233,6 +241,6 @@ void PhysicsEngine::resizeGrid(int32_t width, int32_t height) {
     for(auto& gameObject: gameObjects) {
        gameObject.setRadius(gameObject.radius, getCellSize());
     }
-
 }
+
 

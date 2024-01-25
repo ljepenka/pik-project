@@ -64,3 +64,17 @@ At the bottom of the GUI some useful debugging infromation can be found.
 - mouse position, moouse grid coordinates
 - ratio between cell and particle size (if ratio is to big simulation can become unstable)
 - cell capacity - number of particles each cell can hold (if there are more particles in the cell simulation becomes unstable)
+
+# Creating Graphs
+You will need python venv with matplotlib installed
+Make sure to run this code from base directory.
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install matplotlib
+mkdir graphs
+```
+To create graph from last simulation run
+```bash
+python3 graph_data.py
+```

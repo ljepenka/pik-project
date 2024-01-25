@@ -2,6 +2,7 @@
 #include "game_object.h"
 #include "collision_grid.cpp"
 #include <glm/glm.hpp>
+#include <atomic>
 
 class PhysicsEngine {
 public:
@@ -30,11 +31,16 @@ public:
 
     void setGravity(glm::vec2 gravity) { this->gravity = gravity; }
 
+    int getCollisionCount() { return collisionCount; }
+    int getCollisionTestCount() { return collisionTestCount; }
+
 private:
     glm::vec2 gravity;  // Gravity force
     std::vector<GameObject> gameObjects;
     int threadCount = 1;
     int sub_steps = 8;
+    std::atomic<int>  collisionCount = 0;
+    std::atomic<int>  collisionTestCount = 0;
 
     CollisionGrid grid;
 
