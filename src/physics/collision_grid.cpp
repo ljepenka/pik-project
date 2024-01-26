@@ -6,7 +6,7 @@
 
 class GridCell {
 public:
-    static constexpr uint32_t cell_capacity = 1000;
+    static constexpr uint32_t cell_capacity = 8;
 
     uint32_t ball_counter = 0;
     uint32_t balls[cell_capacity] = {};

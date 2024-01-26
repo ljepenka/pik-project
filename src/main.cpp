@@ -21,7 +21,7 @@ float particle_velocity_y = 50.f;
 int particle_time_delta = 2;
 float particle_size = 0.01;
 int particle_segments = 10;
-int balls_to_add = 2000;
+int balls_to_add = 500;
 
 bool showGrid = false;
 bool showBallColor = false;
