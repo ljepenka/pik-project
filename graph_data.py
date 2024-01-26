@@ -33,3 +33,4 @@ plt.ylim(0, 65)  # Set y-axis limits
 
 plt.grid(True)
 plt.savefig(f'graphs/fps_vs_particle_counter_plot_{grid_size}x{grid_size}_{thread_count}.png')  # Save as PNG file
+

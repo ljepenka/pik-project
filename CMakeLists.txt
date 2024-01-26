@@ -37,7 +37,6 @@ set(SOURCE_FILES
         imgui/backends/imgui_impl_opengl2.cpp
         src/physics/game_object.h
         src/physics/physics_engine.cpp
-        src/common/grid.cpp
         src/physics/collision_grid.cpp
 )
 

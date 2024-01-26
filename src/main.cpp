@@ -101,20 +101,17 @@ void drawGrid(glm::ivec2 gridSize){
 }
 
 void getColor(int index, float& red, float& green, float& blue) {
-    // Example: Coloring cells based on a pattern (you can modify this logic)
         const float frequency = 0.5;
         red = sin(frequency * index + 0) * 0.5 + 0.5;
         green = sin(frequency * index + 2) * 0.5 + 0.5;
         blue = sin(frequency * index + 4) * 0.5 + 0.5;
-
 }
 
 
 
 void drawCircle(glm::vec2 position, float radius, int num_segments, glm::vec3 color) {
-
-
     glBegin(GL_TRIANGLE_FAN );
+
     for (int i = 0; i < num_segments; i++) {
         float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);
         float x = radius * cosf(theta);
@@ -125,15 +122,15 @@ void drawCircle(glm::vec2 position, float radius, int num_segments, glm::vec3 co
     glEnd();
 }
 
-// Display callback function
+
 void display() {
     displaySourcePoints();
-    auto& gameObjects = physicsEngine.getGameObjects();
+    auto& gameObjects = physicsEngine.getBalls();
     if(showGrid){
         drawGrid(physicsEngine.getGridSize());
 
     }
-    // Draw balls
+    // Draw gameObjects
     float red = 0.0, green = 0.0, blue = 0.0;
 
     for (size_t i = 0; i < gameObjects.size(); ++i) {
@@ -161,14 +158,12 @@ void displaySourcePoints() {
 
         glBegin(GL_POINTS);
         glVertex2f(source.position.x, source.position.y);
-        glEnd();    }
-
-
+        glEnd();
+    }
 }
 
-// Timer callback function for animation
+// timer callback function for animation
 void timer(int) {
-
 
     // imgui position in world
     glutPostRedisplay();
@@ -179,7 +174,7 @@ void timer(int) {
                     glm::vec2 particlePosition = source.position;
                     // check if particle is inside another particle
                     bool inside = false;
-                    for (auto& gameObject: physicsEngine.getGameObjects()) {
+                    for (auto& gameObject: physicsEngine.getBalls()) {
                         if (glm::distance(gameObject.position, particlePosition) < (gameObject.radius+ source.radius)) {
                             inside = true;
                             break;
@@ -193,7 +188,7 @@ void timer(int) {
                     glm::vec3 color = glm::vec3(red, green, blue);
                     GameObject gameObject = GameObject{particlePosition, particlePosition, {particle_velocity_x, particle_velocity_y}, source.radius, 100*source.radius, color};
                     gameObject.setRadius(source.radius, physicsEngine.getCellSize());
-                    physicsEngine.addGameObject(gameObject);
+                    physicsEngine.addBall(gameObject);
                     source.number_of_balls--;
                     particle_counter++;
                 }
@@ -210,27 +205,25 @@ int main(int argc, char** argv) {
     glutCreateWindow("2D Particle System DEMO");
     glutDisplayFunc(MainLoopStep);
     glutTimerFunc(0, timer, 0);
-    glClearColor(0.0, 0.0, 0.0, 1.0);  // Black background
-    gluOrtho2D(-1.0, 1.0, -1.0, 1.0);  // Set the coordinate system
-    physicsEngine.setGameObjects(balls);
+    glClearColor(0.0, 0.0, 0.0, 1.0);  // black background
+    gluOrtho2D(-1.0, 1.0, -1.0, 1.0);  // set the coordinate system
+    physicsEngine.setBalls(balls);
     outputFile.open("../results.txt");
 
-
-    // Check if the file is successfully opened
     if (!outputFile.is_open()) {
         std::cerr << "Error opening the file!" << std::endl;
-        return 1; // Return an error code
+        return 1;
     }
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    // Setup Dear ImGui style
+    // setup ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsLight();
 
-    // Setup Platform/Renderer backends
+    // setup platform/renderer backends
     ImGui_ImplGLUT_Init();
     ImGui_ImplOpenGL2_Init();
     ImGui_ImplGLUT_InstallFuncs();
@@ -250,7 +243,7 @@ int main(int argc, char** argv) {
     glutMainLoop();
 
 
-    // Cleanup
+    // cleanup
     ImGui_ImplOpenGL2_Shutdown();
     ImGui_ImplGLUT_Shutdown();
     ImGui::DestroyContext();
@@ -262,10 +255,7 @@ int main(int argc, char** argv) {
 void MainLoopStep()
 
 {
-
-
-
-    // Start the Dear ImGui frame
+    // start the ImGui frame
     ImGui_ImplOpenGL2_NewFrame();
     ImGui_ImplGLUT_NewFrame();
     ImGui::NewFrame();
@@ -284,7 +274,7 @@ void MainLoopStep()
         float cellSize = physicsEngine.getCellSize();
         if(ImGui::SliderFloat("Particle size", &particle_size, 0.003, 0.05)){
             if(global_particle_size) {
-                for (auto &gameObject: physicsEngine.getGameObjects()) {
+                for (auto &gameObject: physicsEngine.getBalls()) {
                     if (gameObject.radius < particle_size) {
                         continue;
                     }
@@ -306,7 +296,7 @@ void MainLoopStep()
         if (ImGui::SliderInt("Thread count", &thread_count, 1, 16)){
             physicsEngine.setThreadCount(thread_count);
         }
-        if (ImGui::SliderInt("Physics substeps", &physics_step, 1, 32)){
+        if (ImGui::SliderInt("Physics sub steps", &physics_step, 1, 32)){
             physicsEngine.setSubSteps(physics_step);
         }
 
@@ -315,18 +305,18 @@ void MainLoopStep()
         }
 
 
-        if(ImGui::Button("Start Particle Sources")){
+        if(ImGui::Button("Start particle sources")){
             for(auto &source: particleSources){
                 source.active = true;
                 source.number_of_balls = balls_to_add;
             }
         }
-        if(ImGui::Button("Stop Particle Sources")){
+        if(ImGui::Button("Stop particle sources")){
             for(auto &source: particleSources){
                 source.active = false;
             }
         }
-        if(ImGui::Button("Clear Particle Sources")){
+        if(ImGui::Button("Clear particle sources")){
             particleSources.clear();
         }
         if(ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::IsWindowHovered()){
@@ -344,7 +334,7 @@ void MainLoopStep()
         ImGui::Text("Number of cells: %d", grid_size*grid_size);
 
         if(ImGui::Button("Clear particles")){
-            physicsEngine.setGameObjects(std::vector<GameObject>());
+            physicsEngine.setBalls(std::vector<GameObject>());
             particle_counter = 0;
         }
 
@@ -353,8 +343,8 @@ void MainLoopStep()
         glm::vec2 mousePosGrid = physicsEngine.mapWorldToGrid(mouseWorldPos, physicsEngine.getGridSize());
         ImGui::Text("Mouse position x= %.3f y= %.3f, Grid coordinates x=%d, y=%d (index = %d)", mouseWorldPos.x, mouseWorldPos.y, (int)mousePosGrid.x, (int)mousePosGrid.y, (int)(mousePosGrid.x * physicsEngine.getGrid().height + mousePosGrid.y));
 
-        ImGui::Text("Ration cell size to particle size: %.3f and cell capacity is %d", physicsEngine.getCellSize() / (2.f * particle_size), CollisionCell::cell_capacity);
-        if((physicsEngine.getCellSize() / (2.f * particle_size)) * (physicsEngine.getCellSize() / (2.f * particle_size)) > CollisionCell::cell_capacity){
+        ImGui::Text("Ration cell size to particle size: %.3f and cell capacity is %d", physicsEngine.getCellSize() / (2.f * particle_size), GridCell::cell_capacity);
+        if((physicsEngine.getCellSize() / (2.f * particle_size)) * (physicsEngine.getCellSize() / (2.f * particle_size)) > GridCell::cell_capacity){
             ImGui::Text("WARNING: Cell size is too big compared to particle size, this will cause particles to be skipped");
         }
         ImGui::Text("Number of collisions: %d, number of tested particles: %d (%f)", physicsEngine.getCollisionCount(), physicsEngine.getCollisionTestCount(), (float)physicsEngine.getCollisionCount() / (float)physicsEngine.getCollisionTestCount());
@@ -363,7 +353,7 @@ void MainLoopStep()
 
 
     outputFile << "FPS:" <<io.Framerate << ";GRID_SIZE:" << physicsEngine.getGridSize().x <<";PARTICLE_COUNTER:" << particle_counter << ";COLLISION_COUNT:"<< physicsEngine.getCollisionCount() << ";COLLISION_TEST_COUNT:" << physicsEngine.getCollisionTestCount() << ";THREAD_COUNT:"<< thread_count<< std::endl;
-    // Rendering
+    // rendering
     ImGui::Render();
     glViewport(0, 0, (GLsizei)io.DisplaySize.x, (GLsizei)io.DisplaySize.y);
     glClearColor(0.5f, 0.5f, 0.5f, 1.f);
